@@ -1,3 +1,8 @@
+variable "aws_account_id" {
+  description = "The AWS account ID"
+  type        = string
+}
+
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
@@ -11,9 +16,8 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "Deployment environment (e.g. poc, staging, prod)"
+  description = "Deployment environment (e.g. dev, staging, prod)"
   type        = string
-  default     = "poc"
 }
 
 variable "lambda_timeout" {
