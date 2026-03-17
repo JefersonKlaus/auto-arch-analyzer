@@ -50,7 +50,7 @@ jobs:
         run: terraform fmt -check
 
       - name: Terraform Plan
-        run: terraform plan -input=false -var "region=${{ secrets.AWS_REGION }}" -var "account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev"
+        run: terraform plan -input=false -var "aws_region=${{ secrets.AWS_REGION }}" -var "aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false -var "region=${{ secrets.AWS_REGION }}" -var "account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev"
+        run: terraform apply -auto-approve -input=false -var "aws_region=${{ secrets.AWS_REGION }}" -var "aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev"
