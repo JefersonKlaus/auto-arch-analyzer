@@ -65,6 +65,41 @@ resource "aws_iam_role_policy" "lambda_bedrock" {
   })
 }
 
+resource "aws_iam_role_policy" "lambda_sqs" {
+  name = "${var.project_name}-sqs-policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "SQSSendMessage"
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:GetQueueUrl",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = [
+          "arn:aws:sqs:${var.aws_region}:${var.aws_account_id}:${var.project_name}-*"
+        ]
+      },
+      {
+        Sid    = "SQSReceiveMessage"
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = [
+          "arn:aws:sqs:${var.aws_region}:${var.aws_account_id}:${var.project_name}-*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "sfn_role" {
   name = "${var.project_name}-sfn-role"
 
