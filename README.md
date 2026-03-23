@@ -1,5 +1,64 @@
 # auto-arch-analyzer
 
+## Características
+
+- ✅ API Gateway com endpoint POST /analyze
+- ✅ SQS Ingestion Queue para processamento assíncrono
+- ✅ SQS Dead Letter Queue para tratamento de erros
+- ✅ Integração com Step Functions e Amazon Bedrock
+- ✅ Retorno imediato com 202 Accepted
+- ✅ Rastreamento com execution_id único
+- ✅ Base64 encoding para diagramas
+
+## Quick Start - API Gateway
+
+### Obter URL da API
+
+Após deployar com Terraform, obtenha a URL da API:
+
+```bash
+terraform apply
+terraform output api_gateway_invoke_url
+```
+
+### Exemplo de Requisição
+
+```bash
+# Codificar imagem para base64
+BASE64_IMAGE=$(base64 -w 0 < diagram.png)
+
+# Enviar requisição
+curl -X POST https://YOUR_API_URL/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "prompt": "Analyze this architecture",
+    "diagram": "'$BASE64_IMAGE'"
+  }'
+```
+
+**Resposta (202 Accepted):**
+```json
+{
+  "message": "Request accepted for processing",
+  "execution_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "QUEUED",
+  "timestamp": "2024-03-22T10:30:45.123456"
+}
+```
+
+### Testadores de API
+
+**Python (recomendado):**
+```bash
+python3 test_api.py https://YOUR_API_URL /path/to/diagram.png
+```
+
+**Bash:**
+```bash
+bash test-api.sh
+```
+
 ## Arquitetura
 
 Este projeto implementa uma arquitetura AWS escalável e modular usando Terraform. A solução é composta por múltiplos componentes interconectados que trabalham juntos para fornecer uma infraestrutura robusta na nuvem.
@@ -7,6 +66,23 @@ Este projeto implementa uma arquitetura AWS escalável e modular usando Terrafor
 ![Arquitetura do Projeto](arch.png)
 
 A arquitetura inclui componentes de rede, computação, armazenamento, funções Lambda, orquestração e gerenciamento de identidade e acesso, permitindo uma solução completa e integrada para aplicações cloud-native.
+
+## Componentes Principais
+
+### API Gateway + Lambda (POST /analyze)
+- Endpoint para submissão de diagramas de arquitetura
+- Validação de payload (email, diagram, prompt)
+- Retorna 202 Accepted imediatamente
+- Gera execution_id único para rastreamento
+
+### SQS Queues
+- **Ingestion Queue**: Processa diagramas enviados
+- **PDF/Mail Queue**: Fila assíncrona para geração de PDFs e emails
+- **Dead Letter Queue**: Captura mensagens com erro após 3 retry attempts
+
+### Funções Lambda
+- **analyze-arch**: Handler do POST /analyze (30s timeout)
+- **hello-world**: Exemplo de função Lambda
 
 ### Variáveis de Ambiente para Execução Local
 

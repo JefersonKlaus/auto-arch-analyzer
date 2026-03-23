@@ -3,6 +3,21 @@
 #   value       = module.network.api_gateway_invoke_url
 # }
 
+output "api_gateway_invoke_url" {
+  description = "Invoke URL of the POST /analyze endpoint"
+  value       = module.api_gateway.api_gateway_invoke_url
+}
+
+output "ingestion_queue_url" {
+  description = "URL of the SQS Ingestion Queue"
+  value       = module.queue.ingestion_queue_url
+}
+
+output "pdf_mail_queue_url" {
+  description = "URL of the SQS PDF/Mail Queue"
+  value       = module.queue.pdf_mail_queue_url
+}
+
 output "s3_bucket_name" {
   description = "Name of the S3 bucket used to store architecture diagrams"
   value       = module.storage.s3_bucket_name
@@ -46,4 +61,14 @@ output "lambda_hello_world_function_name" {
 output "lambda_hello_world_function_arn" {
   description = "ARN of the Hello World Lambda function"
   value       = module.lambda.hello_world_function_arn
+}
+
+output "lambda_analyze_function_name" {
+  description = "Name of the Analyze Architecture Lambda function"
+  value       = module.lambda.analyze_function_name
+}
+
+output "lambda_analyze_function_arn" {
+  description = "ARN of the Analyze Architecture Lambda function"
+  value       = module.lambda.analyze_function_arn
 }

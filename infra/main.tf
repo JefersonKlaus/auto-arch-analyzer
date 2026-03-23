@@ -23,6 +23,7 @@ module "iam" {
   source = "./modules/iam"
 
   project_name       = local.project_name
+  aws_account_id     = var.aws_account_id
   aws_region         = var.aws_region
   s3_bucket_arn      = module.storage.s3_bucket_arn
   dynamodb_table_arn = module.storage.dynamodb_table_arn
@@ -34,6 +35,24 @@ module "lambda" {
   lambda_role_arn = module.iam.lambda_role_arn
   project_name    = local.project_name
   environment     = var.environment
+}
+
+module "queue" {
+  source = "./modules/queue"
+
+  project_name = local.project_name
+}
+
+module "api_gateway" {
+  source = "./modules/apigateway"
+
+  project_name                 = local.project_name
+  environment                  = var.environment
+  aws_region                   = var.aws_region
+  aws_account_id               = var.aws_account_id
+  ingestion_queue_name         = module.queue.ingestion_queue_name
+  ingestion_queue_arn          = module.queue.ingestion_queue_arn
+  analyze_lambda_function_name = module.lambda.analyze_function_name
 }
 
 # module "compute" {
