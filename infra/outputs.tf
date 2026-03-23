@@ -37,3 +37,13 @@ output "dynamodb_table_arn" {
 #   description = "ARN of the AI processor Lambda function"
 #   value       = module.compute.lambda_function_arn
 # }
+
+output "lambda_hello_world_function_name" {
+  description = "Name of the Hello World Lambda function"
+  value       = module.lambda.hello_world_function_name
+}
+
+output "lambda_hello_world_function_arn" {
+  description = "ARN of the Hello World Lambda function"
+  value       = module.lambda.hello_world_function_arn
+}

@@ -19,14 +19,22 @@ module "storage" {
   project_name = local.project_name
 }
 
-# module "iam" {
-#   source = "./modules/iam"
+module "iam" {
+  source = "./modules/iam"
 
-#   project_name       = local.project_name
-#   aws_region         = var.aws_region
-#   s3_bucket_arn      = module.storage.s3_bucket_arn
-#   dynamodb_table_arn = module.storage.dynamodb_table_arn
-# }
+  project_name       = local.project_name
+  aws_region         = var.aws_region
+  s3_bucket_arn      = module.storage.s3_bucket_arn
+  dynamodb_table_arn = module.storage.dynamodb_table_arn
+}
+
+module "lambda" {
+  source = "./modules/lambda"
+
+  lambda_role_arn = module.iam.lambda_role_arn
+  project_name    = local.project_name
+  environment     = var.environment
+}
 
 # module "compute" {
 #   source = "./modules/compute"

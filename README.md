@@ -1,5 +1,13 @@
 # auto-arch-analyzer
 
+## Arquitetura
+
+Este projeto implementa uma arquitetura AWS escalável e modular usando Terraform. A solução é composta por múltiplos componentes interconectados que trabalham juntos para fornecer uma infraestrutura robusta na nuvem.
+
+![Arquitetura do Projeto](arch.png)
+
+A arquitetura inclui componentes de rede, computação, armazenamento, funções Lambda, orquestração e gerenciamento de identidade e acesso, permitindo uma solução completa e integrada para aplicações cloud-native.
+
 ### Variáveis de Ambiente para Execução Local
 
 Para rodar o Terraform localmente, você precisa exportar as seguintes variáveis de ambiente com suas credenciais AWS:
