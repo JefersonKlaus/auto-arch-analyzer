@@ -3,9 +3,8 @@ terraform {
 }
 
 locals {
-  project_name = var.project_name
   common_tags = {
-    Project     = "HACKATHON-FIAP"
+    Project     = var.project_name
     Environment = var.environment
     Company     = "FIAP Secure Systems"
     Course      = "SOAT-IADT"
@@ -16,7 +15,7 @@ locals {
 module "s3" {
   source = "./modules/s3"
 
-  project_name = local.project_name
+  project_name = var.project_name
   environment  = var.environment
   tags         = local.common_tags
 }
@@ -24,14 +23,14 @@ module "s3" {
 module "dynamodb" {
   source = "./modules/dynamodb"
 
-  project_name = local.project_name
+  project_name = var.project_name
   tags         = local.common_tags
 }
 
 module "iam" {
   source = "./modules/iam"
 
-  project_name   = local.project_name
+  project_name   = var.project_name
   aws_account_id = var.aws_account_id
   aws_region     = var.aws_region
   s3_bucket_arns = [
@@ -46,20 +45,20 @@ module "lambda" {
   source = "./modules/lambda"
 
   lambda_role_arn = module.iam.lambda_role_arn
-  project_name    = local.project_name
+  project_name    = var.project_name
   environment     = var.environment
 }
 
 module "queue" {
   source = "./modules/queue"
 
-  project_name = local.project_name
+  project_name = var.project_name
 }
 
 module "api_gateway" {
   source = "./modules/apigateway"
 
-  project_name                 = local.project_name
+  project_name                 = var.project_name
   environment                  = var.environment
   aws_region                   = var.aws_region
   aws_account_id               = var.aws_account_id

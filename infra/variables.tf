@@ -12,7 +12,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Project name used as a prefix for all resource names"
   type        = string
-  default     = "archintel-predictor"
+  default     = "auto-arch-analyzer"
 }
 
 variable "environment" {
