@@ -13,20 +13,33 @@ locals {
   }
 }
 
-module "storage" {
-  source = "./modules/storage"
+module "s3" {
+  source = "./modules/s3"
 
   project_name = local.project_name
+  environment  = var.environment
+  tags         = local.common_tags
+}
+
+module "dynamodb" {
+  source = "./modules/dynamodb"
+
+  project_name = local.project_name
+  tags         = local.common_tags
 }
 
 module "iam" {
   source = "./modules/iam"
 
-  project_name       = local.project_name
-  aws_account_id     = var.aws_account_id
-  aws_region         = var.aws_region
-  s3_bucket_arn      = module.storage.s3_bucket_arn
-  dynamodb_table_arn = module.storage.dynamodb_table_arn
+  project_name   = local.project_name
+  aws_account_id = var.aws_account_id
+  aws_region     = var.aws_region
+  s3_bucket_arns = [
+    module.s3.diagram_upload_bucket_arn,
+    module.s3.analysis_result_bucket_arn,
+    module.s3.freeze_bucket_arn,
+  ]
+  dynamodb_table_arn = module.dynamodb.table_arn
 }
 
 module "lambda" {
@@ -55,17 +68,6 @@ module "api_gateway" {
   analyze_lambda_function_name = module.lambda.analyze_function_name
 }
 
-# module "compute" {
-#   source = "./modules/compute"
-
-#   project_name        = local.project_name
-#   log_retention_days  = var.log_retention_days
-#   lambda_timeout      = var.lambda_timeout
-#   lambda_memory_size  = var.lambda_memory_size
-#   lambda_role_arn     = module.iam.lambda_role_arn
-#   s3_bucket_id        = module.storage.s3_bucket_id
-#   dynamodb_table_name = module.storage.dynamodb_table_name
-# }
 
 # module "network" {
 #   source = "./modules/network"

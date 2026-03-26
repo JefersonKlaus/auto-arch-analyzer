@@ -1,3 +1,4 @@
+// Permite que o API Gateway assuma uma role IAM para publicar mensagens no SQS.
 data "aws_iam_policy_document" "apigateway_assume_role" {
   statement {
     effect = "Allow"
@@ -14,6 +15,7 @@ resource "aws_iam_role" "apigateway_sqs_role" {
   assume_role_policy = data.aws_iam_policy_document.apigateway_assume_role.json
 }
 
+// Politica minima para enviar mensagens na fila de ingestao.
 data "aws_iam_policy_document" "apigateway_sqs_policy" {
   statement {
     effect = "Allow"
@@ -32,6 +34,7 @@ resource "aws_iam_role_policy" "apigateway_sqs_policy" {
   policy = data.aws_iam_policy_document.apigateway_sqs_policy.json
 }
 
+// API REST publica com endpoint /analyze para receber requisicoes assincronas.
 resource "aws_api_gateway_rest_api" "analyzer_api" {
   name        = "${var.project_name}-api"
   description = "API Gateway for async architecture analysis ingestion"
@@ -54,6 +57,7 @@ resource "aws_api_gateway_method" "analyze_post" {
   authorization = "NONE"
 }
 
+// Integra o POST /analyze diretamente com SQS (sem Lambda), montando o payload via VTL.
 resource "aws_api_gateway_integration" "analyze_post_sqs" {
   rest_api_id             = aws_api_gateway_rest_api.analyzer_api.id
   resource_id             = aws_api_gateway_resource.analyze.id
@@ -77,6 +81,7 @@ EOT
   depends_on = [aws_iam_role_policy.apigateway_sqs_policy]
 }
 
+// Resposta de sucesso do endpoint de ingestao: retorna 202 Accepted para processamento async.
 resource "aws_api_gateway_method_response" "analyze_post_202" {
   rest_api_id = aws_api_gateway_rest_api.analyzer_api.id
   resource_id = aws_api_gateway_resource.analyze.id
@@ -109,6 +114,7 @@ EOT
   depends_on = [aws_api_gateway_integration.analyze_post_sqs]
 }
 
+// Endpoint OPTIONS para CORS no recurso /analyze.
 resource "aws_api_gateway_method" "analyze_options" {
   rest_api_id   = aws_api_gateway_rest_api.analyzer_api.id
   resource_id   = aws_api_gateway_resource.analyze.id
@@ -155,6 +161,7 @@ resource "aws_api_gateway_integration_response" "analyze_options_200" {
   depends_on = [aws_api_gateway_integration.analyze_options]
 }
 
+// Forca novo deployment quando metodo/integracao mudam, mantendo stage estavel.
 resource "aws_api_gateway_deployment" "analyzer" {
   rest_api_id = aws_api_gateway_rest_api.analyzer_api.id
 

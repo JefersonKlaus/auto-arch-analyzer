@@ -13,9 +13,9 @@ variable "aws_region" {
   type        = string
 }
 
-variable "s3_bucket_arn" {
-  description = "ARN of the S3 bucket used by Lambda"
-  type        = string
+variable "s3_bucket_arns" {
+  description = "ARNs of S3 buckets used by Lambda"
+  type        = list(string)
 }
 
 variable "dynamodb_table_arn" {
