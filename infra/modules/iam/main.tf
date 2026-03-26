@@ -27,13 +27,13 @@ resource "aws_iam_role_policy" "lambda_s3_dynamodb" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "S3DiagramsAccess"
+        Sid    = "S3BucketsAccess"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:PutObject",
         ]
-        Resource = "${var.s3_bucket_arn}/*"
+        Resource = [for bucket_arn in var.s3_bucket_arns : "${bucket_arn}/*"]
       },
       {
         Sid    = "DynamoDBReportsAccess"

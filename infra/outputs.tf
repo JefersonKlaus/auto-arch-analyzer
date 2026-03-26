@@ -19,13 +19,33 @@ output "pdf_mail_queue_url" {
 }
 
 output "s3_bucket_name" {
-  description = "Name of the S3 bucket used to store architecture diagrams"
+  description = "Name of the diagrams S3 bucket"
   value       = module.storage.s3_bucket_name
 }
 
 output "s3_bucket_arn" {
-  description = "ARN of the S3 bucket"
+  description = "ARN of the diagrams S3 bucket"
   value       = module.storage.s3_bucket_arn
+}
+
+output "diagrams_bucket_name" {
+  description = "Name of the diagrams S3 bucket"
+  value       = module.storage.diagrams_bucket_name
+}
+
+output "diagrams_bucket_arn" {
+  description = "ARN of the diagrams S3 bucket"
+  value       = module.storage.diagrams_bucket_arn
+}
+
+output "reports_pdf_bucket_name" {
+  description = "Name of the reports PDF S3 bucket"
+  value       = module.storage.reports_pdf_bucket_name
+}
+
+output "reports_pdf_bucket_arn" {
+  description = "ARN of the reports PDF S3 bucket"
+  value       = module.storage.reports_pdf_bucket_arn
 }
 
 output "dynamodb_table_name" {

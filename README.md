@@ -47,17 +47,6 @@ curl -X POST https://YOUR_API_URL/analyze \
 }
 ```
 
-### Testadores de API
-
-**Python (recomendado):**
-```bash
-python3 test_api.py https://YOUR_API_URL /path/to/diagram.png
-```
-
-**Bash:**
-```bash
-bash test-api.sh
-```
 
 ## Arquitetura
 
@@ -82,7 +71,6 @@ A arquitetura inclui componentes de rede, computação, armazenamento, funções
 
 ### Funções Lambda
 - **analyze-arch**: Handler do POST /analyze (30s timeout)
-- **hello-world**: Exemplo de função Lambda
 
 ### Variáveis de Ambiente para Execução Local
 
