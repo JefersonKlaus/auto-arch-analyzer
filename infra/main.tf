@@ -58,10 +58,10 @@ module "queue" {
 module "api_gateway" {
   source = "./modules/apigateway"
 
-  project_name                 = var.project_name
-  environment                  = var.environment
-  aws_region                   = var.aws_region
-  aws_account_id               = var.aws_account_id
+  project_name   = var.project_name
+  environment    = var.environment
+  aws_region     = var.aws_region
+  aws_account_id = var.aws_account_id
 }
 
 
