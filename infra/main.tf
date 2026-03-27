@@ -63,22 +63,3 @@ module "api_gateway" {
   aws_region     = var.aws_region
   aws_account_id = var.aws_account_id
 }
-
-
-# module "network" {
-#   source = "./modules/network"
-
-#   project_name         = local.project_name
-#   environment          = var.environment
-#   lambda_invoke_arn    = module.compute.lambda_invoke_arn
-#   lambda_function_name = module.compute.lambda_function_name
-# }
-
-# module "orchestration" {
-#   source = "./modules/orchestration"
-
-#   project_name        = local.project_name
-#   sfn_role_arn        = module.iam.sfn_role_arn
-#   sfn_role_id         = module.iam.sfn_role_id
-#   lambda_function_arn = module.compute.lambda_function_arn
-# }
