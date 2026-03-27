@@ -62,9 +62,6 @@ module "api_gateway" {
   environment                  = var.environment
   aws_region                   = var.aws_region
   aws_account_id               = var.aws_account_id
-  ingestion_queue_name         = module.queue.ingestion_queue_name
-  ingestion_queue_arn          = module.queue.ingestion_queue_arn
-  analyze_lambda_function_name = module.lambda.analyze_function_name
 }
 
 
