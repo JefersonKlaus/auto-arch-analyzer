@@ -18,7 +18,7 @@ module "analyze_resource" {
 
   http_methods = ["POST"]
   lambda_function_names = {
-    POST = "analyze-arch"
+    POST = "analyze_arch"
   }
 
   region             = var.aws_region
