@@ -14,22 +14,8 @@ variable "aws_region" {
 }
 
 variable "aws_account_id" {
-  description = "AWS account ID used to build API Gateway -> SQS integration URI"
+  description = "AWS account ID used to build API Gateway -> Lambda integration URI"
   type        = string
 }
 
-variable "ingestion_queue_name" {
-  description = "Name of the ingestion queue used by API Gateway integration"
-  type        = string
-}
 
-variable "ingestion_queue_arn" {
-  description = "ARN of the ingestion queue used in API Gateway IAM policy"
-  type        = string
-}
-
-variable "analyze_lambda_function_name" {
-  description = "Legacy compatibility input; currently unused by direct API Gateway -> SQS integration"
-  type        = string
-  default     = null
-}

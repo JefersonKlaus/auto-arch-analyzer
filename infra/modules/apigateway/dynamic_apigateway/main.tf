@@ -9,8 +9,7 @@ resource "aws_api_gateway_method" "api_method" {
   rest_api_id   = var.rest_api_id
   resource_id   = aws_api_gateway_resource.api_resource.id
   http_method   = each.value
-  authorization = "COGNITO_USER_POOLS"
-  authorizer_id = var.authorizer_id
+  authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "api_integration" {

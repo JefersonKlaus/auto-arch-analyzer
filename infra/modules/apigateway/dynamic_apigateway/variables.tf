@@ -29,11 +29,6 @@ variable "lambda_function_names" {
   type        = map(string)
 }
 
-variable "authorizer_id" {
-  description = "The ID of the API Gateway authorizer"
-  type        = string
-}
-
 variable "region" {
   description = "The AWS region"
   type        = string

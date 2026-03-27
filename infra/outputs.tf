@@ -1,13 +1,3 @@
-# output "api_gateway_invoke_url" {
-#   description = "Base invoke URL of the API Gateway stage"
-#   value       = module.network.api_gateway_invoke_url
-# }
-
-output "api_gateway_invoke_url" {
-  description = "Invoke URL of the POST /analyze endpoint"
-  value       = module.api_gateway.api_gateway_invoke_url
-}
-
 output "ingestion_queue_url" {
   description = "URL of the SQS Ingestion Queue"
   value       = module.queue.ingestion_queue_url
