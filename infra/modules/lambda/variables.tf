@@ -12,3 +12,13 @@ variable "environment" {
   description = "Deployment environment (e.g. dev, staging, prod)"
   type        = string
 }
+
+variable "s3_diagram_bucket" {
+  description = "S3 bucket name for diagram uploads"
+  type        = string
+}
+
+variable "sqs_ingestion_queue_url" {
+  description = "SQS ingestion queue URL"
+  type        = string
+}
