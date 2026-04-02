@@ -3,7 +3,7 @@
 # Common Layer
 data "archive_file" "common_layer_zip" {
   type        = "zip"
-  source_dir  = "${path.root}/src/layers/common"
+  source_dir  = "${path.root}/../src/layers/common"
   output_path = "${path.module}/zip/common_layer_payload.zip"
 }
 
