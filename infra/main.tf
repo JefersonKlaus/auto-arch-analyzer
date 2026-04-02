@@ -57,6 +57,7 @@ module "lambda" {
   environment             = var.environment
   s3_diagram_bucket       = module.s3.diagram_upload_bucket_name
   sqs_ingestion_queue_url = module.queue.ingestion_queue_url
+  common_layer_arn        = module.layers.common_layer_arn
 }
 
 module "queue" {

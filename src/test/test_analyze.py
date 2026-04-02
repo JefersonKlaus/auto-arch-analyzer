@@ -8,14 +8,14 @@ import json
 import base64
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 import pytest
 
 # Make handler modules importable when running tests from src/test.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "api" / "analyze"))
 
-from models import AnalyzeRequest, DiagramMetadata
+from models import AnalyzeRequest
 from request_parser import RequestParser
 from s3_uploader import S3DiagramUploader
 from sqs_publisher import SQSPublisher

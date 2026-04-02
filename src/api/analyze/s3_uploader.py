@@ -3,7 +3,6 @@ S3 operations for uploading diagrams.
 Single Responsibility: Handle all S3 storage operations.
 """
 import base64
-import json
 import uuid
 from typing import Optional
 

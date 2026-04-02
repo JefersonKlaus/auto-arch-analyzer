@@ -2,7 +2,6 @@
 Orchestration layer coordinating the analyze workflow.
 Single Responsibility: Coordinate interaction between S3 and SQS components.
 """
-import os
 from typing import Dict, Any
 
 from request_parser import RequestParser

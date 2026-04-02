@@ -3,7 +3,7 @@ SQS operations for publishing messages to the ingestion queue.
 Single Responsibility: Handle all SQS message publishing.
 """
 import json
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import boto3
 

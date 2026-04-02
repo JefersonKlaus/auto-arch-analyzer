@@ -12,10 +12,10 @@ module "analyze" {
   ])
 
   environment_variables = {
-    ENVIRONMENT              = var.environment
-    PROJECT_NAME             = var.project_name
-    S3_DIAGRAM_BUCKET        = var.s3_diagram_bucket
-    SQS_INGESTION_QUEUE_URL  = var.sqs_ingestion_queue_url
+    ENVIRONMENT             = var.environment
+    PROJECT_NAME            = var.project_name
+    S3_DIAGRAM_BUCKET       = var.s3_diagram_bucket
+    SQS_INGESTION_QUEUE_URL = var.sqs_ingestion_queue_url
   }
 }
 

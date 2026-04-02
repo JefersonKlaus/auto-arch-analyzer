@@ -11,7 +11,7 @@ class AnalyzeRequest:
 
     def __post_init__(self):
         """Validate required fields."""
-        if not self.diagram:
+        if self.diagram is None:
             raise ValueError("diagram field is required")
         if not isinstance(self.diagram, str) or not self.diagram.strip():
             raise ValueError("diagram must be a non-empty string")

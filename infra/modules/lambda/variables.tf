@@ -22,3 +22,8 @@ variable "sqs_ingestion_queue_url" {
   description = "SQS ingestion queue URL"
   type        = string
 }
+
+variable "common_layer_arn" {
+  description = "ARN of the shared common Lambda layer"
+  type        = string
+}

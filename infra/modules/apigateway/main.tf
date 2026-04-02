@@ -21,7 +21,7 @@ module "analyze_resource" {
     POST = "analyze_arch"
   }
 
-  region             = var.aws_region
-  account_id         = var.aws_account_id
-  enable_cors        = true
+  region      = var.aws_region
+  account_id  = var.aws_account_id
+  enable_cors = true
 }
