@@ -41,12 +41,23 @@ module "iam" {
   dynamodb_table_arn = module.dynamodb.table_arn
 }
 
+module "layers" {
+  source = "./modules/layers"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
+
+
 module "lambda" {
   source = "./modules/lambda"
 
-  lambda_role_arn = module.iam.lambda_role_arn
-  project_name    = var.project_name
-  environment     = var.environment
+  lambda_role_arn         = module.iam.lambda_role_arn
+  project_name            = var.project_name
+  environment             = var.environment
+  s3_diagram_bucket       = module.s3.diagram_upload_bucket_name
+  sqs_ingestion_queue_url = module.queue.ingestion_queue_url
+  common_layer_arn        = module.layers.common_layer_arn
 }
 
 module "queue" {

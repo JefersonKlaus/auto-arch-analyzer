@@ -33,3 +33,15 @@ variable "timeout" {
   type        = number
   default     = 10
 }
+
+variable "memory_size" {
+  description = "Amount of memory available to the Lambda function in MB"
+  type        = number
+  default     = 128
+}
+
+variable "layers" {
+  description = "List of Lambda Layer ARNs to attach"
+  type        = list(string)
+  default     = []
+}
