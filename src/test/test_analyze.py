@@ -4,6 +4,7 @@ Unit tests for analyze handler components.
 These tests demonstrate how each component can be tested in isolation.
 Run with: python -m pytest src/test/test_analyze.py
 """
+
 import json
 import base64
 import sys
@@ -28,35 +29,38 @@ class TestAnalyzeRequest:
     def test_valid_request_with_all_fields(self):
         """Test creating a valid request with all fields."""
         req = AnalyzeRequest(
-            diagram="base64data",
-            email="test@example.com",
-            prompt="Analyze this"
+            diagram="base64data", email="test@example.com", prompt="Analyze this"
         )
         assert req.diagram == "base64data"
         assert req.email == "test@example.com"
         assert req.prompt == "Analyze this"
 
-    def test_valid_request_only_required_field(self):
-        """Test creating a valid request with only required field."""
-        req = AnalyzeRequest(diagram="base64data")
+    def test_valid_request_only_required_fields(self):
+        """Test creating a valid request with only required fields."""
+        req = AnalyzeRequest(diagram="base64data", email="test@example.com")
         assert req.diagram == "base64data"
-        assert req.email is None
+        assert req.email == "test@example.com"
         assert req.prompt is None
 
     def test_missing_required_diagram(self):
         """Test that missing diagram raises error."""
         with pytest.raises(ValueError, match="diagram field is required"):
-            AnalyzeRequest(diagram=None)
+            AnalyzeRequest(diagram=None, email="test@example.com")
 
     def test_empty_diagram(self):
         """Test that empty diagram raises error."""
         with pytest.raises(ValueError, match="diagram must be a non-empty string"):
-            AnalyzeRequest(diagram="")
+            AnalyzeRequest(diagram="", email="test@example.com")
 
     def test_invalid_email_type(self):
         """Test that invalid email type raises error."""
-        with pytest.raises(ValueError, match="email must be a string"):
+        with pytest.raises(ValueError, match="email must be a non-empty string"):
             AnalyzeRequest(diagram="base64", email=123)
+
+    def test_missing_required_email(self):
+        """Test that missing email raises error."""
+        with pytest.raises(ValueError, match="email field is required"):
+            AnalyzeRequest(diagram="base64", email=None)
 
 
 class TestRequestParser:
@@ -67,7 +71,7 @@ class TestRequestParser:
         event = {
             "diagram": "base64data",
             "email": "test@example.com",
-            "prompt": "Analyze"
+            "prompt": "Analyze",
         }
         req = RequestParser.parse_event(event)
         assert req.diagram == "base64data"
@@ -76,10 +80,7 @@ class TestRequestParser:
     def test_parse_api_gateway_event(self):
         """Test parsing API Gateway wrapped event."""
         event = {
-            "body": json.dumps({
-                "diagram": "base64data",
-                "email": "test@example.com"
-            })
+            "body": json.dumps({"diagram": "base64data", "email": "test@example.com"})
         }
         req = RequestParser.parse_event(event)
         assert req.diagram == "base64data"
@@ -87,7 +88,7 @@ class TestRequestParser:
 
     def test_missing_required_field(self):
         """Test parsing event without required field."""
-        event = {"email": "test@example.com"}
+        event = {"diagram": "base64data"}
         with pytest.raises(ValueError):
             RequestParser.parse_event(event)
 
@@ -101,7 +102,7 @@ class TestRequestParser:
 class TestS3DiagramUploader:
     """Tests for S3DiagramUploader."""
 
-    @patch('s3_uploader.boto3.client')
+    @patch("s3_uploader.boto3.client")
     def test_upload_diagram_success(self, mock_boto3_client):
         """Test successful diagram upload."""
         # Setup
@@ -121,14 +122,14 @@ class TestS3DiagramUploader:
         assert s3_key.endswith("-diagram.png")
         mock_s3.put_object.assert_called_once()
 
-    @patch('s3_uploader.boto3.client')
+    @patch("s3_uploader.boto3.client")
     def test_upload_invalid_base64(self, mock_boto3_client):
         """Test upload with invalid base64."""
         uploader = S3DiagramUploader("test-bucket")
         with pytest.raises(ValueError, match="Invalid base64"):
             uploader.upload_diagram("not valid base64!!!", "test@example.com")
 
-    @patch('s3_uploader.boto3.client')
+    @patch("s3_uploader.boto3.client")
     def test_upload_s3_failure(self, mock_boto3_client):
         """Test handling S3 upload failure."""
         # Setup
@@ -148,7 +149,7 @@ class TestS3DiagramUploader:
 class TestSQSPublisher:
     """Tests for SQSPublisher."""
 
-    @patch('sqs_publisher.boto3.client')
+    @patch("sqs_publisher.boto3.client")
     def test_publish_success(self, mock_boto3_client):
         """Test successful message publication."""
         # Setup
@@ -163,7 +164,7 @@ class TestSQSPublisher:
             "path/to/diagram.png",
             "test-bucket",
             "test@example.com",
-            "Analyze for security"
+            "Analyze for security",
         )
 
         # Verify
@@ -176,7 +177,7 @@ class TestSQSPublisher:
         assert message_body["s3_key"] == "path/to/diagram.png"
         assert message_body["email"] == "test@example.com"
 
-    @patch('sqs_publisher.boto3.client')
+    @patch("sqs_publisher.boto3.client")
     def test_publish_sqs_failure(self, mock_boto3_client):
         """Test handling SQS publish failure."""
         # Setup
@@ -193,8 +194,8 @@ class TestSQSPublisher:
 class TestAnalyzeOrchestrator:
     """Tests for AnalyzeOrchestrator."""
 
-    @patch('orchestrator.S3DiagramUploader')
-    @patch('orchestrator.SQSPublisher')
+    @patch("orchestrator.S3DiagramUploader")
+    @patch("orchestrator.SQSPublisher")
     def test_process_analyze_request_success(self, mock_sqs_class, mock_s3_class):
         """Test successful end-to-end processing."""
         # Setup
@@ -212,7 +213,7 @@ class TestAnalyzeOrchestrator:
         event = {
             "diagram": base64.b64encode(b"test").decode(),
             "email": "test@example.com",
-            "prompt": "Analyze"
+            "prompt": "Analyze",
         }
         result = orchestrator.process_analyze_request(event)
 
@@ -225,8 +226,8 @@ class TestAnalyzeOrchestrator:
 
 
 # Integration test example
-@patch('orchestrator.S3DiagramUploader')
-@patch('orchestrator.SQSPublisher')
+@patch("orchestrator.S3DiagramUploader")
+@patch("orchestrator.SQSPublisher")
 def test_analyze_handler_integration(mock_sqs_class, mock_s3_class):
     """Integration test of complete handler flow."""
     # This would test the full flow from handler to response

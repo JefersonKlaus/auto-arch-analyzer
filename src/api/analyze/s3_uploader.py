@@ -2,6 +2,7 @@
 S3 operations for uploading diagrams.
 Single Responsibility: Handle all S3 storage operations.
 """
+
 import base64
 import uuid
 from typing import Optional
@@ -59,7 +60,7 @@ class S3DiagramUploader:
                 Metadata={
                     "email": email or "not-provided",
                     "upload-timestamp": str(uuid.uuid4()),
-                }
+                },
             )
             return s3_key
         except Exception as e:

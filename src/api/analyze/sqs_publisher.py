@@ -2,6 +2,7 @@
 SQS operations for publishing messages to the ingestion queue.
 Single Responsibility: Handle all SQS message publishing.
 """
+
 import json
 from typing import Optional
 
@@ -27,7 +28,7 @@ class SQSPublisher:
         s3_key: str,
         s3_bucket: str,
         email: Optional[str] = None,
-        prompt: Optional[str] = None
+        prompt: Optional[str] = None,
     ) -> str:
         """
         Publish diagram metadata message to SQS.
@@ -48,7 +49,7 @@ class SQSPublisher:
             "s3_bucket": s3_bucket,
             "s3_key": s3_key,
             "email": email,
-            "prompt": prompt
+            "prompt": prompt,
         }
 
         try:
@@ -56,15 +57,12 @@ class SQSPublisher:
                 QueueUrl=self.queue_url,
                 MessageBody=json.dumps(message_body),
                 MessageAttributes={
-                    "Type": {
-                        "StringValue": "DiagramUpload",
-                        "DataType": "String"
-                    },
+                    "Type": {"StringValue": "DiagramUpload", "DataType": "String"},
                     "Email": {
                         "StringValue": email or "not-provided",
-                        "DataType": "String"
-                    }
-                }
+                        "DataType": "String",
+                    },
+                },
             )
             return response["MessageId"]
         except Exception as e:

@@ -2,6 +2,7 @@
 Lambda handler for POST /analyze endpoint.
 Single Responsibility: Handle HTTP request/response and error mapping.
 """
+
 import json
 import os
 from datetime import datetime, timezone
@@ -33,33 +34,45 @@ def lambda_handler(event, context):
         result = orchestrator.process_analyze_request(event)
 
         # Return 202 Accepted
-        return success_response({
-            "status": "ACCEPTED",
-            "message": "Diagrama aceito para processamento",
-            "message_id": result["message_id"],
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }, 202)
+        return success_response(
+            {
+                "status": "ACCEPTED",
+                "message": "Diagrama aceito para processamento",
+                "message_id": result["message_id"],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            202,
+        )
 
     except json.JSONDecodeError as e:
         print(f"JSON decode error: {str(e)}")
-        return error_response({
-            "error": "Invalid JSON",
-            "message": "Payload JSON invalido",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }, 400)
+        return error_response(
+            {
+                "error": "Invalid JSON",
+                "message": "Payload JSON invalido",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            400,
+        )
 
     except ValueError as e:
         print(f"Validation error: {str(e)}")
-        return error_response({
-            "error": "Validation failed",
-            "message": str(e),
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }, 400)
+        return error_response(
+            {
+                "error": "Validation failed",
+                "message": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            400,
+        )
 
     except Exception as e:
         print(f"Unexpected error in analyze handler: {str(e)}")
-        return error_response({
-            "error": "Internal server error",
-            "message": "Falha ao processar requisição",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }, 500)
+        return error_response(
+            {
+                "error": "Internal server error",
+                "message": "Falha ao processar requisição",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            500,
+        )

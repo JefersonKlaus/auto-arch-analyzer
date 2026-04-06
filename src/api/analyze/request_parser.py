@@ -2,6 +2,7 @@
 Request parsing and extraction from Lambda events.
 Single Responsibility: Parse and extract input data from Lambda events.
 """
+
 import json
 from typing import Any, Dict
 
@@ -37,17 +38,13 @@ class RequestParser:
         else:
             body = event
 
-        # Extract fields (diagram is required, email and prompt are optional)
+        # Extract fields (diagram and email are required, prompt is optional)
         email = body.get("email")
         diagram = body.get("diagram")
         prompt = body.get("prompt")
 
         # Validate and construct request
         try:
-            return AnalyzeRequest(
-                diagram=diagram,
-                email=email,
-                prompt=prompt
-            )
+            return AnalyzeRequest(diagram=diagram, email=email, prompt=prompt)
         except ValueError as e:
             raise ValueError(f"Invalid request: {str(e)}")
