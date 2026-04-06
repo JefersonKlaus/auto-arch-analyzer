@@ -12,7 +12,7 @@ resource "aws_sqs_queue" "ingestion_queue" {
   delay_seconds              = 0
   max_message_size           = 262144
   message_retention_seconds  = var.message_retention_seconds
-  receive_wait_time_seconds  = 20      # Long polling
+  receive_wait_time_seconds  = 20 # Long polling
   visibility_timeout_seconds = var.ingestion_visibility_timeout_seconds
 
   redrive_policy = jsonencode({
