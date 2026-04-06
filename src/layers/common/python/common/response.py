@@ -22,7 +22,9 @@ def success_response(body, status_code=200, encoder=CustomJSONEncoder):
 
 
 def error_response(error_message, status_code=500):
-    error_body = error_message if isinstance(error_message, dict) else {"error": error_message}
+    error_body = (
+        error_message if isinstance(error_message, dict) else {"error": error_message}
+    )
     return {
         "statusCode": status_code,
         "headers": {

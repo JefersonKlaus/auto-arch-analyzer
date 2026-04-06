@@ -2,6 +2,7 @@
 Orchestration layer coordinating the analyze workflow.
 Single Responsibility: Coordinate interaction between S3 and SQS components.
 """
+
 from typing import Dict, Any
 
 from request_parser import RequestParser
@@ -54,7 +55,7 @@ class AnalyzeOrchestrator:
             s3_key=s3_key,
             s3_bucket=self.s3_uploader.bucket_name,
             email=request.email,
-            prompt=request.prompt
+            prompt=request.prompt,
         )
 
         # Return success response
@@ -62,5 +63,5 @@ class AnalyzeOrchestrator:
             "s3_key": s3_key,
             "message_id": message_id,
             "email": request.email,
-            "prompt": request.prompt
+            "prompt": request.prompt,
         }
