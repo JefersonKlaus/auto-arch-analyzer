@@ -25,7 +25,7 @@ module "file_validator" {
   lambda_role_arn      = var.lambda_role_arn
   source_dir           = "${path.root}/../src/lambdas/file_validator"
   handler              = "handler.lambda_handler"
-  lambda_function_name = "${var.project_name}-file-validator"
+  lambda_function_name = "file-validator"
   runtime              = "python3.12"
   timeout              = 30
   layers = compact([
@@ -45,7 +45,7 @@ module "ai_processor" {
   lambda_role_arn      = var.lambda_role_arn
   source_dir           = "${path.root}/../src/lambdas/ai_processor"
   handler              = "handler.lambda_handler"
-  lambda_function_name = "${var.project_name}-ai-processor"
+  lambda_function_name = "ai-processor"
   runtime              = "python3.12"
   timeout              = 30
   layers = compact([
@@ -64,7 +64,7 @@ module "report_adapter" {
   lambda_role_arn      = var.lambda_role_arn
   source_dir           = "${path.root}/../src/lambdas/report_adapter"
   handler              = "handler.lambda_handler"
-  lambda_function_name = "${var.project_name}-report-adapter"
+  lambda_function_name = "report-adapter"
   runtime              = "python3.12"
   timeout              = 30
   layers = compact([
@@ -83,7 +83,7 @@ module "error_logger" {
   lambda_role_arn      = var.lambda_role_arn
   source_dir           = "${path.root}/../src/lambdas/error_logger"
   handler              = "handler.lambda_handler"
-  lambda_function_name = "${var.project_name}-error-logger"
+  lambda_function_name = "error-logger"
   runtime              = "python3.12"
   timeout              = 30
   layers = compact([
