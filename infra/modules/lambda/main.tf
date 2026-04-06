@@ -2,11 +2,88 @@ module "analyze" {
   source = "./dynamic_lambda"
 
   lambda_role_arn      = var.lambda_role_arn
-  source_dir           = "${path.root}/../src/api/analyze"
+  source_dir           = "${path.root}/../src/api/post/diagram-analyze"
   handler              = "handler.lambda_handler"
   lambda_function_name = "analyze-arch"
   runtime              = "python3.12"
   timeout              = 30
+
+  environment_variables = {
+    ENVIRONMENT  = var.environment
+    PROJECT_NAME = var.project_name
+  }
+}
+
+module "file_validator" {
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/file_validator"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "${var.project_name}-file-validator"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
+
+  environment_variables = {
+    ENVIRONMENT       = var.environment
+    PROJECT_NAME      = var.project_name
+    S3_DIAGRAM_BUCKET = var.s3_diagram_bucket
+  }
+}
+
+module "ai_processor" {
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/ai_processor"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "${var.project_name}-ai-processor"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
+
+  environment_variables = {
+    ENVIRONMENT  = var.environment
+    PROJECT_NAME = var.project_name
+  }
+}
+
+module "report_adapter" {
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/report_adapter"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "${var.project_name}-report-adapter"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
+
+  environment_variables = {
+    ENVIRONMENT  = var.environment
+    PROJECT_NAME = var.project_name
+  }
+}
+
+module "error_logger" {
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/error_logger"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "${var.project_name}-error-logger"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
 
   environment_variables = {
     ENVIRONMENT  = var.environment

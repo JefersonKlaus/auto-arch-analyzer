@@ -48,27 +48,7 @@ output "dynamodb_table_arn" {
   value       = module.dynamodb.table_arn
 }
 
-# output "step_functions_arn" {
-#   description = "ARN of the Step Functions state machine"
-#   value       = module.orchestration.step_functions_arn
-# }
-
-# output "lambda_function_name" {
-#   description = "Name of the AI processor Lambda function"
-#   value       = module.compute.lambda_function_name
-# }
-
-# output "lambda_function_arn" {
-#   description = "ARN of the AI processor Lambda function"
-#   value       = module.compute.lambda_function_arn
-# }
-
-output "lambda_analyze_function_name" {
-  description = "Name of the Analyze Architecture Lambda function"
-  value       = module.lambda.analyze_function_name
-}
-
-output "lambda_analyze_function_arn" {
-  description = "ARN of the Analyze Architecture Lambda function"
-  value       = module.lambda.analyze_function_arn
+output "step_functions_arn" {
+  description = "ARN of the Step Functions state machine"
+  value       = module.orchestration.step_functions_arn
 }

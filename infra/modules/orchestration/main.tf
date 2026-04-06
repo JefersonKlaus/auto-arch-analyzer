@@ -5,10 +5,15 @@ resource "aws_iam_role_policy" "sfn_invoke_lambda" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid      = "InvokeLambda"
-      Effect   = "Allow"
-      Action   = ["lambda:InvokeFunction"]
-      Resource = var.lambda_function_arn
+      Sid    = "InvokeLambda"
+      Effect = "Allow"
+      Action = ["lambda:InvokeFunction"]
+      Resource = [
+        var.file_validator_lambda_arn,
+        var.ai_processor_lambda_arn,
+        var.report_adapter_lambda_arn,
+        var.error_logger_lambda_arn,
+      ]
     }]
   })
 }
@@ -19,12 +24,12 @@ resource "aws_sfn_state_machine" "workflow" {
   type     = "STANDARD"
 
   definition = jsonencode({
-    StartAt = "Processing"
+    StartAt = "FileValidator"
     States = {
-      Processing = {
+      FileValidator = {
         Type     = "Task"
-        Resource = var.lambda_function_arn
-        Next     = "Analyzed"
+        Resource = var.file_validator_lambda_arn
+        Next     = "AIProcessor"
         Retry = [{
           ErrorEquals     = ["States.ALL"]
           IntervalSeconds = 2
@@ -33,16 +38,53 @@ resource "aws_sfn_state_machine" "workflow" {
         }]
         Catch = [{
           ErrorEquals = ["States.ALL"]
-          Next        = "Error"
+          ResultPath  = "$.error"
+          Next        = "ErrorLogger"
         }]
       }
-      Analyzed = {
-        Type = "Pass"
-        End  = true
+      AIProcessor = {
+        Type     = "Task"
+        Resource = var.ai_processor_lambda_arn
+        Next     = "ReportAdapter"
+        Retry = [{
+          ErrorEquals     = ["States.ALL"]
+          IntervalSeconds = 2
+          MaxAttempts     = 3
+          BackoffRate     = 2
+        }]
+        Catch = [{
+          ErrorEquals = ["States.ALL"]
+          ResultPath  = "$.error"
+          Next        = "ErrorLogger"
+        }]
       }
-      Error = {
+      ReportAdapter = {
+        Type     = "Task"
+        Resource = var.report_adapter_lambda_arn
+        Next     = "WorkflowSucceeded"
+        Retry = [{
+          ErrorEquals     = ["States.ALL"]
+          IntervalSeconds = 2
+          MaxAttempts     = 3
+          BackoffRate     = 2
+        }]
+        Catch = [{
+          ErrorEquals = ["States.ALL"]
+          ResultPath  = "$.error"
+          Next        = "ErrorLogger"
+        }]
+      }
+      WorkflowSucceeded = {
+        Type = "Succeed"
+      }
+      ErrorLogger = {
+        Type     = "Task"
+        Resource = var.error_logger_lambda_arn
+        Next     = "WorkflowFailed"
+      }
+      WorkflowFailed = {
         Type  = "Fail"
-        Cause = "Critical failure during AI processing."
+        Cause = "Workflow failed after error logging"
       }
     }
   })
