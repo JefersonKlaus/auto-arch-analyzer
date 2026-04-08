@@ -8,14 +8,19 @@ def lambda_handler(event, context):
     prompt = payload.get("prompt")
     s3_file_path = payload.get("s3_file_path")
 
-    report = {
-        "status": "stub",
-        "message": "AI processing not implemented yet",
-        "prompt": prompt,
+    technical_analysis = {
+        "architecture_summary": {
+            "description": "Architecture analysis pending - AI processing not implemented yet",
+            "architectural_style": "TBD",
+            "cloud_provider": "AWS"
+        },
+        "service_inventory": [],
+        "architecture_findings": []
     }
 
     return {
         "email": email,
+        "prompt": prompt,
         "s3_file_path": s3_file_path,
-        "report_json": json.dumps(report),
+        "technical_analysis": technical_analysis,
     }

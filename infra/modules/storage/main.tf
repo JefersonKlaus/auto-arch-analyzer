@@ -1,13 +1,13 @@
 locals {
-  name_prefix = "${lower(var.environment)}-${lower(var.project_name)}"
+  name_suffix = "${lower(var.project_name)}-${lower(var.environment)}"
 }
 
 resource "aws_s3_bucket" "diagrams" {
-  bucket = "${local.name_prefix}-diagrams"
+  bucket = "${local.name_suffix}-diagrams"
 }
 
 resource "aws_s3_bucket" "reports_pdf" {
-  bucket = "${local.name_prefix}-diagrams-result"
+  bucket = "${local.name_suffix}-diagrams-result"
 }
 
 resource "aws_s3_bucket_public_access_block" "diagrams" {
