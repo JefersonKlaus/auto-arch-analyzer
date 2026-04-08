@@ -1,6 +1,6 @@
 // Bucket de entrada para arquivos de diagramas enviados ao sistema.
 resource "aws_s3_bucket" "diagram_upload" {
-  bucket = lower("${var.environment}-${var.project_name}-diagram-upload")
+  bucket = lower("${var.project_name}-diagram-upload-${var.environment}")
   tags = merge(var.tags, {
     Purpose = "Upload de diagramas"
     Module  = "analyzer"
@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "diagram_upload" {
 
 // Bucket para armazenar o resultado da analise dos diagramas.
 resource "aws_s3_bucket" "analysis_result" {
-  bucket = lower("${var.environment}-${var.project_name}-analysis-result")
+  bucket = lower("${var.project_name}-analysis-result-${var.environment}")
   tags = merge(var.tags, {
     Purpose = "Resultado da analise dos diagramas"
     Module  = "analyzer"
@@ -18,7 +18,7 @@ resource "aws_s3_bucket" "analysis_result" {
 
 // Bucket de congelamento (longa retencao) para copias em armazenamento mais barato.
 resource "aws_s3_bucket" "freeze" {
-  bucket = lower("${var.environment}-${var.project_name}-freeze")
+  bucket = lower("${var.project_name}-freeze-${var.environment}")
   tags = merge(var.tags, {
     Purpose = "Arquivos congelados"
     Module  = "analyzer"

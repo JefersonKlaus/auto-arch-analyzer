@@ -4,7 +4,7 @@ variable "project_name" {
 }
 
 variable "environment" {
-  description = "The environment for the deployment (e.g., dev, hom, prod)"
+  description = "The environment for the deployment (e.g., dev, hom, prod), used as a suffix in S3 bucket names"
   type        = string
 }
 
