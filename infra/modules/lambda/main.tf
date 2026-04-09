@@ -57,7 +57,8 @@ module "ai_processor" {
     PROJECT_NAME = var.project_name
   }
 }
-module "init_lambda"{
+
+module "init_lambda" {
   source = "./dynamic_lambda"
 
   lambda_role_arn      = var.lambda_role_arn
@@ -76,7 +77,6 @@ module "init_lambda"{
   }
 }
 
-# Configura o trigger SQS para a init_lambda
 
 module "report_adapter" {
   source = "./dynamic_lambda"
@@ -115,8 +115,9 @@ module "error_logger" {
     PROJECT_NAME = var.project_name
   }
 }
+
 resource "aws_lambda_event_source_mapping" "init_lambda_sqs_trigger" {
-  event_source_arn = module.queue.ingestion_queue_url # Usar o ARN da fila de ingestão
+  event_source_arn = var.sqs_ingestion_queue_url # Usar o ARN da fila de ingestão
   function_name    = module.init_lambda.lambda_function_name
   batch_size       = 10 # Processar até 10 mensagens por invocação
   enabled          = true
