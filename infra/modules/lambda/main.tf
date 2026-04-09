@@ -57,6 +57,26 @@ module "ai_processor" {
     PROJECT_NAME = var.project_name
   }
 }
+module "init_lambda"{
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/init_lambda"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "init-lambda"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
+
+  environment_variables = {
+    ENVIRONMENT  = var.environment
+    PROJECT_NAME = var.project_name
+  }
+}
+
+# Configura o trigger SQS para a init_lambda
 
 module "report_adapter" {
   source = "./dynamic_lambda"
@@ -95,4 +115,9 @@ module "error_logger" {
     PROJECT_NAME = var.project_name
   }
 }
-
+resource "aws_lambda_event_source_mapping" "init_lambda_sqs_trigger" {
+  event_source_arn = module.queue.ingestion_queue_url # Usar o ARN da fila de ingestão
+  function_name    = module.init_lambda.lambda_function_name
+  batch_size       = 10 # Processar até 10 mensagens por invocação
+  enabled          = true
+}
