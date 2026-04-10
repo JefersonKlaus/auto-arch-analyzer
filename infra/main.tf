@@ -58,6 +58,8 @@ module "lambda" {
   s3_diagram_bucket       = module.s3.diagram_upload_bucket_name
   sqs_ingestion_queue_url = module.queue.ingestion_queue_url
   common_layer_arn        = module.layers.common_layer_arn
+  dynamodb_table_name     = module.dynamodb.table_name
+  sqs_pdf_mail_queue_url  = module.queue.pdf_mail_queue_url
 }
 
 module "queue" {
