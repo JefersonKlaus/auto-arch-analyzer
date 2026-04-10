@@ -17,3 +17,8 @@ output "error_logger_function_arn" {
   description = "ARN of the Error Logger Lambda function"
   value       = module.error_logger.lambda_function_arn
 }
+
+output "init_step_function_arn" {
+  description = "ARN of the Init Step Function Lambda function"
+  value       = module.init_step_function.lambda_function_arn
+}

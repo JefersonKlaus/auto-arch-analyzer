@@ -225,12 +225,3 @@ class TestAnalyzeOrchestrator:
         assert result["email"] == "test@example.com"
         mock_s3.upload_diagram.assert_called_once()
         mock_sqs.publish_diagram_metadata.assert_called_once()
-
-
-# Integration test example
-@patch("orchestrator.S3DiagramUploader")
-@patch("orchestrator.SQSPublisher")
-def test_analyze_handler_integration(mock_sqs_class, mock_s3_class):
-    """Integration test of complete handler flow."""
-    # This would test the full flow from handler to response
-    pass

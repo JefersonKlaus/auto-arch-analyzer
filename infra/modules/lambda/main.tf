@@ -58,6 +58,27 @@ module "ai_processor" {
   }
 }
 
+module "init_step_function" {
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/init_step_function"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "init-step-function"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
+
+  environment_variables = {
+    ENVIRONMENT                    = var.environment
+    PROJECT_NAME                   = var.project_name
+    STEPFUNCTION_STATE_MACHINE_ARN = var.stepfunction_state_machine_arn
+  }
+}
+
+
 module "report_adapter" {
   source = "./dynamic_lambda"
 
@@ -96,3 +117,9 @@ module "error_logger" {
   }
 }
 
+resource "aws_lambda_event_source_mapping" "init_step_function_sqs_trigger" {
+  event_source_arn = var.sqs_ingestion_queue_arn
+  function_name    = module.init_step_function.lambda_function_name
+  batch_size       = 10
+  enabled          = true
+}
