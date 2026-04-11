@@ -7,16 +7,9 @@ Run with: python -m pytest src/test/test_analyze.py
 
 import json
 import base64
-from pathlib import Path
 from unittest.mock import patch, MagicMock
-import sys
 
 import pytest
-
-# Add the 'src' directory to the Python path to allow absolute imports
-current_dir = Path(__file__).resolve().parent
-src_dir = current_dir.parent
-sys.path.insert(0, str(src_dir))
 
 from api.post.diagram_analyze.models import AnalyzeRequest
 from api.post.diagram_analyze.request_parser import RequestParser
