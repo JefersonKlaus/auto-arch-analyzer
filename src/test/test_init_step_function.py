@@ -10,10 +10,10 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from lambdas.init_step_function.models import InitRequest
-from lambdas.init_step_function.request_parser import RequestParser
-from lambdas.init_step_function.stepfunction_service import StepFunctionTriggerService
-from lambdas.init_step_function.orchestrator import InitOrchestrator
+from models import InitRequest
+from request_parser import RequestParser
+from stepfunction_service import StepFunctionTriggerService
+from orchestrator import InitOrchestrator
 
 
 class TestInitRequest:
@@ -154,7 +154,7 @@ class TestRequestParser:
 class TestStepFunctionTriggerService:
     """Tests for StepFunctionTriggerService."""
 
-    @patch("lambdas.init_step_function.stepfunction_service.boto3.client")
+    @patch(".stepfunction_service.boto3.client")
     def test_start_step_functions_success(self, mock_boto3_client):
         """Test successful Step Functions execution start."""
         mock_sfn_client = MagicMock()
@@ -180,7 +180,7 @@ class TestStepFunctionTriggerService:
         assert "execution-" in kwargs["name"]
         assert json.loads(kwargs["input"]) == payload.to_dict()
 
-    @patch("lambdas.init_step_function.stepfunction_service.boto3.client")
+    @patch(".stepfunction_service.boto3.client")
     def test_start_step_functions_failure_raises_exception(self, mock_boto3_client):
         """Test that Step Functions execution failure raises an exception."""
         mock_sfn_client = MagicMock()
@@ -199,7 +199,7 @@ class TestStepFunctionTriggerService:
 class TestInitOrchestrator:
     """Tests for InitOrchestrator."""
 
-    @patch("lambdas.init_step_function.orchestrator.RequestParser.parse_event")
+    @patch(".orchestrator.RequestParser.parse_event")
     def test_process_event_success(self, mock_parse_event):
         """Test successful end-to-end processing by the orchestrator."""
         # Mock InitRequest object returned by RequestParser
@@ -242,7 +242,7 @@ class TestInitOrchestrator:
     def test_process_event_validation_error(self):
         """Test that validation errors from RequestParser are propagated."""
         with patch(
-            "lambdas.init_step_function.orchestrator.RequestParser.parse_event",
+            ".orchestrator.RequestParser.parse_event",
             side_effect=ValueError("Invalid input"),
         ):
             orchestrator = InitOrchestrator(state_machine_arn="test-sfn-arn")
