@@ -6,16 +6,9 @@ Run with: python -m pytest src/test/test_init_step_function.py
 """
 
 import json
-import sys
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
-
-# # Add the 'src' directory to the Python path to allow absolute imports
-# current_dir = Path(__file__).resolve().parent
-# src_dir = current_dir.parent
-# sys.path.insert(0, str(src_dir))
 
 from lambdas.init_step_function.models import InitRequest
 from lambdas.init_step_function.request_parser import RequestParser
