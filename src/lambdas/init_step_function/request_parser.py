@@ -6,7 +6,7 @@ Single Responsibility: Parse and extract input data from Lambda events.
 import json
 from typing import Any, Dict
 
-from models import InitRequest
+from .models import InitRequest
 
 
 class RequestParser:
