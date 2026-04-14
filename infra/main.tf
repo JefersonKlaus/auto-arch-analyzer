@@ -10,6 +10,9 @@ locals {
     Course      = "SOAT-IADT"
     ManagedBy   = "Terraform"
   }
+
+  # Keep deterministic ARN to avoid module dependency cycle.
+  step_functions_workflow_arn = "arn:aws:states:${var.aws_region}:${var.aws_account_id}:stateMachine:${var.project_name}-workflow"
 }
 
 module "s3" {
@@ -60,6 +63,8 @@ module "lambda" {
   common_layer_arn        = module.layers.common_layer_arn
   dynamodb_table_name     = module.dynamodb.table_name
   sqs_pdf_mail_queue_url  = module.queue.pdf_mail_queue_url
+  sqs_ingestion_queue_arn        = module.queue.ingestion_queue_arn
+  stepfunction_state_machine_arn = local.step_functions_workflow_arn
 }
 
 module "queue" {

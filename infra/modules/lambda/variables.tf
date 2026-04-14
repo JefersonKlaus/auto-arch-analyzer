@@ -23,6 +23,17 @@ variable "sqs_ingestion_queue_url" {
   type        = string
 }
 
+variable "sqs_ingestion_queue_arn" {
+  description = "SQS ingestion queue ARN"
+  type        = string
+}
+
+
+variable "stepfunction_state_machine_arn" {
+  description = "Step Functions state machine ARN"
+  type        = string
+}
+
 variable "common_layer_arn" {
   description = "ARN of the shared common Lambda layer"
   type        = string
