@@ -10,6 +10,14 @@
 - ✅ Rastreamento com execution_id único
 - ✅ Base64 encoding para diagramas
 
+## Padrão de Commit
+
+Antes de cada commit, execute o formatador para manter o código consistente:
+
+```bash
+ruff format src/
+```
+
 ## Quick Start - API Gateway
 
 ### Obter URL da API
