@@ -159,11 +159,9 @@ class BedrockService():
             raise
 
     def get_prompt_text(self, user_context: str):
-        # Este esquema será incorporado diretamente no prompt para o Bedrock
         response_schema_dict = self.get_response_schema()
-        # Generate unique ID and current time for the response
         execution_id = str(uuid.uuid4())
-        analysis_date = datetime.utcnow().isoformat() + "Z"  # ISO 8601 with Z for UTC
+        analysis_date = datetime.utcnow().isoformat() + "Z"
         return f"""
                             You are a cloud architect expert. Your task is to analyze the provided architecture diagram.
                             Based on the diagram and the following user context, provide a detailed technical analysis.
@@ -190,7 +188,6 @@ class BedrockService():
                             """
 
     def _build_request(self, image_bytes: bytes, media_type: str, prompt_text: str) -> Dict[str, Any]:
-        """Constrói o corpo da requisição para modelos Anthropic Claude 3."""
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         return {
                 "anthropic_version": "bedrock-2023-05-31",
@@ -213,12 +210,7 @@ class BedrockService():
                         ]
                     }
                 ],
-                "max_tokens": 4000,  # Ajuste conforme necessário
-                "temperature": 0.0,  # Para saída mais determinística
-                "top_p": 1  # Para saída mais determinística
+                "max_tokens": 4000,  
+                "temperature": 0.0,  
+                "top_p": 1  
             }
-
-
-if __name__ == '__main__':
-    cli = BedrockService(model='anthropic.claude-3-haiku-20240307-v1:0', s3_bucket_name='auto-arch-analyzer-diagram-upload-dev')
-    cli.list_models()
