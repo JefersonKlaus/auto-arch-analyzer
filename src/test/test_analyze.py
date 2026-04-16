@@ -7,22 +7,15 @@ Run with: python -m pytest src/test/test_analyze.py
 
 import json
 import base64
-import sys
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
 
-# Make handler modules importable when running tests from src/test.
-sys.path.insert(
-    0, str(Path(__file__).resolve().parent.parent / "api" / "post" / "diagram-analyze")
-)
-
-from models import AnalyzeRequest
-from request_parser import RequestParser
-from s3_uploader import S3DiagramUploader
-from sqs_publisher import SQSPublisher
-from orchestrator import AnalyzeOrchestrator
+from api.post.diagram_analyze.models import AnalyzeRequest
+from api.post.diagram_analyze.request_parser import RequestParser
+from api.post.diagram_analyze.s3_uploader import S3DiagramUploader
+from api.post.diagram_analyze.sqs_publisher import SQSPublisher
+from api.post.diagram_analyze.orchestrator import AnalyzeOrchestrator
 
 
 class TestAnalyzeRequest:
@@ -104,7 +97,7 @@ class TestRequestParser:
 class TestS3DiagramUploader:
     """Tests for S3DiagramUploader."""
 
-    @patch("s3_uploader.boto3.client")
+    @patch("api.post.diagram_analyze.s3_uploader.boto3.client")
     def test_upload_diagram_success(self, mock_boto3_client):
         """Test successful diagram upload."""
         # Setup
@@ -124,14 +117,14 @@ class TestS3DiagramUploader:
         assert s3_key.endswith("-diagram.png")
         mock_s3.put_object.assert_called_once()
 
-    @patch("s3_uploader.boto3.client")
+    @patch("api.post.diagram_analyze.s3_uploader.boto3.client")
     def test_upload_invalid_base64(self, mock_boto3_client):
         """Test upload with invalid base64."""
         uploader = S3DiagramUploader("test-bucket")
         with pytest.raises(ValueError, match="Invalid base64"):
             uploader.upload_diagram("not valid base64!!!", "test@example.com")
 
-    @patch("s3_uploader.boto3.client")
+    @patch("api.post.diagram_analyze.s3_uploader.boto3.client")
     def test_upload_s3_failure(self, mock_boto3_client):
         """Test handling S3 upload failure."""
         # Setup
@@ -151,7 +144,7 @@ class TestS3DiagramUploader:
 class TestSQSPublisher:
     """Tests for SQSPublisher."""
 
-    @patch("sqs_publisher.boto3.client")
+    @patch("api.post.diagram_analyze.sqs_publisher.boto3.client")
     def test_publish_success(self, mock_boto3_client):
         """Test successful message publication."""
         # Setup
@@ -179,7 +172,7 @@ class TestSQSPublisher:
         assert message_body["s3_key"] == "path/to/diagram.png"
         assert message_body["email"] == "test@example.com"
 
-    @patch("sqs_publisher.boto3.client")
+    @patch("api.post.diagram_analyze.sqs_publisher.boto3.client")
     def test_publish_sqs_failure(self, mock_boto3_client):
         """Test handling SQS publish failure."""
         # Setup
@@ -196,8 +189,8 @@ class TestSQSPublisher:
 class TestAnalyzeOrchestrator:
     """Tests for AnalyzeOrchestrator."""
 
-    @patch("orchestrator.S3DiagramUploader")
-    @patch("orchestrator.SQSPublisher")
+    @patch("api.post.diagram_analyze.orchestrator.S3DiagramUploader")
+    @patch("api.post.diagram_analyze.orchestrator.SQSPublisher")
     def test_process_analyze_request_success(self, mock_sqs_class, mock_s3_class):
         """Test successful end-to-end processing."""
         # Setup
