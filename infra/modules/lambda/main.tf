@@ -55,6 +55,7 @@ module "ai_processor" {
   environment_variables = {
     ENVIRONMENT  = var.environment
     PROJECT_NAME = var.project_name
+    S3_DIAGRAM_BUCKET = var.s3_diagram_bucket
   }
 }
 

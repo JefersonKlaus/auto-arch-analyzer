@@ -56,3 +56,36 @@ def lambda_handler(event, context):
         logger.exception("Unexpected error in AI Processor handler: %s", e)
         # Re-raise to fail the Lambda execution
         raise
+
+
+if __name__ == "__main__":
+    sqs_message = {
+        "Records": [
+            {
+                "messageId": "string-gerado-pelo-sqs",
+                "receiptHandle": "string-gerado-pelo-sqs",
+                "body": "{\"email\": \"emailtest@gmail.com\", \"prompt\": null, \"s3_file_path\": \"voce/95490a0e-diagram.png\"}",
+                "attributes": {
+                    "ApproximateReceiveCount": "1",
+                    "SentTimestamp": "1678886400000",
+                    "SenderId": "AIDAIXMPLSPXMPL",
+                    "ApproximateFirstReceiveTimestamp": "1678886400000"
+                },
+                "messageAttributes": {
+                    "Type": {
+                        "stringValue": "DiagramUpload",
+                        "dataType": "String"
+                    },
+                    "Email": {
+                        "stringValue": "user@example.com",
+                        "dataType": "String"
+                    }
+                },
+                "md5OfBody": "md5-hash-do-body",
+                "eventSource": "aws:sqs",
+                "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:auto-arch-analyzer-ingestion-queue-dev",
+                "awsRegion": "us-east-1"
+            }
+        ]
+    }
+    result = lambda_handler(sqs_message, None)

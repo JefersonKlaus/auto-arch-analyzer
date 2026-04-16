@@ -99,7 +99,7 @@ class BedrockService():
             user_context=process_image_dto.prompt)
 
         if self.model.startswith("anthropic.claude-3"):
-            request_body = self._process_with_anthropic(image_bytes=image_bytes, media_type=media_type, prompt_text=prompt_text)
+            request_body = self._build_request(image_bytes=image_bytes, media_type=media_type, prompt_text=prompt_text)
         else:
             raise ValueError(f"Unsupported model: {self.model}. Please use a supported multimodal model (e.g., Claude 3).")
 
@@ -189,7 +189,7 @@ class BedrockService():
                             Please provide only the JSON output, no conversational text before or after.
                             """
 
-    def _process_with_anthropic(self, image_bytes: bytes, media_type: str, prompt_text: str) -> Dict[str, Any]:
+    def _build_request(self, image_bytes: bytes, media_type: str, prompt_text: str) -> Dict[str, Any]:
         """Constrói o corpo da requisição para modelos Anthropic Claude 3."""
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         return {

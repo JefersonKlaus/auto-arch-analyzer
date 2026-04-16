@@ -11,6 +11,7 @@ from lambdas.ai_processor.models import ProcessImageAIDTO
 
 logger = logging.getLogger(__name__)
 
+
 class AIProcessorOrchestrator:
     """Orchestrates the analysis of a diagram image using an AI model."""
 
@@ -41,7 +42,8 @@ class AIProcessorOrchestrator:
         Returns:
             A dictionary containing the technical analysis from the AI model.
         """
-        logger.info("Starting diagram analysis for s3_path: %s", process_image_dto.s3_file_path)
+        logger.info("Starting diagram analysis for s3_path: %s",
+                    process_image_dto.s3_file_path)
         analysis_result = self.bedrock_service.process_image(process_image_dto)
         logger.info("Successfully completed diagram analysis.")
         return analysis_result
