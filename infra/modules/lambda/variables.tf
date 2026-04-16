@@ -16,7 +16,7 @@ variable "environment" {
 variable "s3_diagram_bucket" {
   description = "S3 bucket name for diagram uploads"
   type        = string
-  default = "auto-arch-analyzer-diagram-upload-dev"
+  default     = "auto-arch-analyzer-diagram-upload-dev"
 }
 
 variable "sqs_ingestion_queue_url" {
