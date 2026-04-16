@@ -4,9 +4,9 @@ import base64
 import logging
 import uuid
 from datetime import datetime
-from s3_service import S3Service
+from lambdas.ai_processor.s3_service import S3Service
 from typing import Any, Dict, Optional
-from models import ProcessImageAIDTO
+from lambdas.ai_processor.models import ProcessImageAIDTO
 from botocore.config import Config
 
 
@@ -16,11 +16,12 @@ class BedrockService():
         retry_config = Config(
             region_name=self.region,
             retries={
-                'max_attempts': 5,  
-                'mode': 'adaptive'  
+                'max_attempts': 5,
+                'mode': 'adaptive'
             }
         )
-        self.bedrock_runtime_client = boto3.client('bedrock-runtime', config=retry_config)
+        self.bedrock_runtime_client = boto3.client(
+            'bedrock-runtime', config=retry_config)
         self.bedrock_management_client = boto3.client(
             'bedrock', config=retry_config)
         self.model = model
@@ -98,18 +99,22 @@ class BedrockService():
         :raises Exception: Para erros na recuperação de imagem ou chamada da API Bedrock.
         """
         try:
-            image_bytes, media_type = self.get_image(process_image_dto.s3_file_path)
+            image_bytes, media_type = self.get_image(
+                process_image_dto.s3_file_path)
         except Exception as e:
-            self.logger.error(f"Falha ao recuperar imagem para processamento: {e}")
+            self.logger.error(
+                f"Falha ao recuperar imagem para processamento: {e}")
             raise
 
         prompt_text = self.get_prompt_text(
             user_context=process_image_dto.prompt)
 
         if self.model.startswith("anthropic.claude-3"):
-            request_body = self._build_request(image_bytes=image_bytes, media_type=media_type, prompt_text=prompt_text)
+            request_body = self._build_request(
+                image_bytes=image_bytes, media_type=media_type, prompt_text=prompt_text)
         else:
-            raise ValueError(f"Unsupported model: {self.model}. Please use a supported multimodal model (e.g., Claude 3).")
+            raise ValueError(
+                f"Unsupported model: {self.model}. Please use a supported multimodal model (e.g., Claude 3).")
 
         self.logger.info(f"Invoking Bedrock model: {self.model}")
         self.logger.debug(
@@ -159,7 +164,8 @@ class BedrockService():
                 media_type = "image/jpeg"
             else:
                 media_type = "image/jpeg"  # Default
-                self.logger.warning(f"Tipo de mídia não reconhecido para S3 key: {s3_key}. Usando default: {media_type}")
+                self.logger.warning(
+                    f"Tipo de mídia não reconhecido para S3 key: {s3_key}. Usando default: {media_type}")
 
             return image_bytes, media_type
         except Exception as e:
@@ -198,11 +204,11 @@ class BedrockService():
     def _build_request(self, image_bytes: bytes, media_type: str, prompt_text: str) -> Dict[str, Any]:
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         return {
-                "anthropic_version": "bedrock-2023-05-31",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
+            "anthropic_version": "bedrock-2023-05-31",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
                             {
                                 "type": "image",
                                 "source": {
@@ -211,14 +217,14 @@ class BedrockService():
                                     "data": image_base64
                                 }
                             },
-                            {
+                        {
                                 "type": "text",
                                 "text": prompt_text
                             }
-                        ]
-                    }
-                ],
-                "max_tokens": 4000,  
-                "temperature": 0.0,  
-                "top_p": 1  
-            }
+                    ]
+                }
+            ],
+            "max_tokens": 4000,
+            "temperature": 0.0,
+            "top_p": 1
+        }

@@ -1,8 +1,8 @@
 import os
 import logging
-from decorators import body_parser
-from models import ProcessImageAIDTO
-from orchestrator import AIProcessorOrchestrator
+from lambdas.ai_processor.decorators import body_parser
+from lambdas.ai_processor.models import ProcessImageAIDTO
+from lambdas.ai_processor.orchestrator import AIProcessorOrchestrator
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
