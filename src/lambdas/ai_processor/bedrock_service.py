@@ -7,14 +7,22 @@ from datetime import datetime
 from s3_service import S3Service
 from typing import Any, Dict, Optional
 from models import ProcessImageAIDTO
+from botocore.config import Config
 
 
 class BedrockService():
     def __init__(self, model: str, s3_bucket_name: str):
         self.region = 'us-east-1'
-        self.bedrock_runtime_client = boto3.client('bedrock-runtime', region_name=self.region)
+        retry_config = Config(
+            region_name=self.region,
+            retries={
+                'max_attempts': 5,  
+                'mode': 'adaptive'  
+            }
+        )
+        self.bedrock_runtime_client = boto3.client('bedrock-runtime', config=retry_config)
         self.bedrock_management_client = boto3.client(
-            'bedrock', region_name=self.region)
+            'bedrock', config=retry_config)
         self.model = model
         self.s3_service = S3Service(bucket_name=s3_bucket_name)
         self.logger = logging.getLogger(__name__)
