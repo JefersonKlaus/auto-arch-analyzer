@@ -5,8 +5,8 @@ Single Responsibility: Handle Lambda input/output and error propagation.
 
 import os
 
-from orchestrator import FileValidatorOrchestrator
-from errors import FILE_NOT_FOUND, INVALID_FORMAT
+from .orchestrator import FileValidatorOrchestrator
+from .errors import FILE_NOT_FOUND, INVALID_FORMAT
 
 
 def lambda_handler(event, context):

@@ -16,7 +16,7 @@ sys.path.insert(2, str(SRC_DIR / "layers" / "common" / "python"))
 # Configure required env var for handler/orchestrator.
 os.environ.setdefault(
     "STEPFUNCTION_STATE_MACHINE_ARN",
-    "arn:aws:states:us-east-1:[ADD_YOUR_ACCOUNT_ID_HERE]:stateMachine:auto-arch-analyzer-workflow"
+    "arn:aws:states:us-east-1:[ADD_YOUR_ACCOUNT_ID_HERE]:stateMachine:auto-arch-analyzer-workflow",
 )
 
 from handler import lambda_handler
@@ -28,27 +28,21 @@ if __name__ == "__main__":
             {
                 "messageId": "string-gerado-pelo-sqs",
                 "receiptHandle": "string-gerado-pelo-sqs",
-                "body": "{\"s3_bucket\": \"auto-arch-analyzer-diagram-upload-dev\", \"s3_key\": \"user@example.com/550e8400-e29b-41d4-a716-446655440000-diagram.png\", \"email\": \"user@example.com\", \"prompt\": \"Analyze this architecture\"}",
+                "body": '{"s3_bucket": "auto-arch-analyzer-diagram-upload-dev", "s3_key": "user@example.com/550e8400-e29b-41d4-a716-446655440000-diagram.png", "email": "user@example.com", "prompt": "Analyze this architecture"}',
                 "attributes": {
                     "ApproximateReceiveCount": "1",
                     "SentTimestamp": "1678886400000",
                     "SenderId": "AIDAIXMPLSPXMPL",
-                    "ApproximateFirstReceiveTimestamp": "1678886400000"
+                    "ApproximateFirstReceiveTimestamp": "1678886400000",
                 },
                 "messageAttributes": {
-                    "Type": {
-                        "stringValue": "DiagramUpload",
-                        "dataType": "String"
-                    },
-                    "Email": {
-                        "stringValue": "user@example.com",
-                        "dataType": "String"
-                    }
+                    "Type": {"stringValue": "DiagramUpload", "dataType": "String"},
+                    "Email": {"stringValue": "user@example.com", "dataType": "String"},
                 },
                 "md5OfBody": "md5-hash-do-body",
                 "eventSource": "aws:sqs",
                 "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:auto-arch-analyzer-ingestion-queue-dev",
-                "awsRegion": "us-east-1"
+                "awsRegion": "us-east-1",
             }
         ]
     }
