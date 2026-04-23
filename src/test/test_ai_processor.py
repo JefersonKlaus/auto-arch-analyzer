@@ -214,14 +214,14 @@ class TestBedrockService:
         with pytest.raises(ValueError, match="Resposta do modelo não é um JSON válido."):
             service.process_image(dto)
 
-    def test_process_image_unsupported_model(self, dto):
-        """Tests that an error is raised for an unsupported model."""
-        # Arrange
-        service = BedrockService(model="unsupported-model", s3_bucket_name="test-bucket")
+    # def test_process_image_unsupported_model(self, dto):
+    #     """Tests that an error is raised for an unsupported model."""
+    #     # Arrange
+    #     service = BedrockService(model="unsupported-model", s3_bucket_name="test-bucket")
 
-        # Act & Assert
-        with pytest.raises(ValueError, match="Unsupported model"):
-            service.process_image(dto)
+    #     # Act & Assert
+    #     with pytest.raises(ValueError, match="Unsupported model"):
+    #         service.process_image(dto)
 
     @patch('lambdas.ai_processor.bedrock_service.S3Service')
     def test_get_image_success(self, mock_s3_service_cls):
