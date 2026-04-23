@@ -1,9 +1,15 @@
 import os
 import json
+import sys
+from pathlib import Path
 from typing import Dict
 from unittest.mock import patch, MagicMock
 
 import pytest
+
+# Make handler modules importable when running tests from src/.
+# This adds the 'src' directory to the path.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lambdas.ai_processor.decorators import parse_message
 from lambdas.ai_processor.handler import lambda_handler
@@ -35,13 +41,40 @@ test_sqs_message = {
 
 class TestDecorators:
     """Tests for decorator functions."""
-    def test_parse_message(self):
+    def test_parse_message_sqs_event(self):
         """Tests that parse_message correctly extracts and parses the body from an SQS event."""
         parsed_body = parse_message(test_sqs_message)
         assert isinstance(parsed_body, Dict)
         assert parsed_body["email"] == "emailtest@gmail.com"
         assert parsed_body["s3_file_path"] == "voce/95490a0e-diagram.png"
         assert parsed_body["prompt"] is None
+
+    def test_parse_message_direct_payload(self):
+        """Tests that parse_message handles a direct payload event."""
+        direct_payload = {
+            "email": "direct@example.com",
+            "s3_file_path": "direct/path.png",
+            "prompt": "direct"
+        }
+        parsed_body = parse_message(direct_payload)
+        assert parsed_body == direct_payload
+
+    def test_parse_message_api_gateway_payload(self):
+        """Tests that parse_message handles an API Gateway-like event."""
+        api_gw_payload = {
+            "body": '{"email": "api@example.com", "s3_file_path": "api/path.png"}'
+        }
+        parsed_body = parse_message(api_gw_payload)
+        assert parsed_body["email"] == "api@example.com"
+        assert parsed_body["s3_file_path"] == "api/path.png"
+
+    def test_parse_message_invalid_json(self):
+        """Tests that parse_message raises JSONDecodeError for invalid JSON in body."""
+        invalid_sqs_message = {
+            "Records": [{"body": "this is not json"}]
+        }
+        with pytest.raises(json.JSONDecodeError):
+            parse_message(invalid_sqs_message)
 
 
 class TestAIProcessorHandler:
@@ -214,14 +247,21 @@ class TestBedrockService:
         with pytest.raises(ValueError, match="Resposta do modelo não é um JSON válido."):
             service.process_image(dto)
 
-    # def test_process_image_unsupported_model(self, dto):
-    #     """Tests that an error is raised for an unsupported model."""
-    #     # Arrange
-    #     service = BedrockService(model="unsupported-model", s3_bucket_name="test-bucket")
+    @patch('lambdas.ai_processor.bedrock_service.boto3.client')
+    @patch('lambdas.ai_processor.bedrock_service.S3Service')
+    def test_process_image_unsupported_model(self, mock_s3_service_cls, mock_boto_client, dto):
+        """Tests that an error is raised for an unsupported model."""
+        # Arrange
+        mock_s3_instance = MagicMock()
+        mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
+        mock_s3_service_cls.return_value = mock_s3_instance
+        mock_boto_client.return_value = MagicMock()
 
-    #     # Act & Assert
-    #     with pytest.raises(ValueError, match="Unsupported model"):
-    #         service.process_image(dto)
+        service = BedrockService(model="unsupported-model", s3_bucket_name="test-bucket")
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Unsupported model"):
+            service.process_image(dto)
 
     @patch('lambdas.ai_processor.bedrock_service.S3Service')
     def test_get_image_success(self, mock_s3_service_cls):
