@@ -6,7 +6,7 @@ Single Responsibility: Parse and extract input data from Lambda events.
 import json
 from typing import Any, Dict
 
-from models import InitRequest
+from .models import InitRequest
 
 
 class RequestParser:
@@ -57,7 +57,11 @@ class RequestParser:
         Raises:
             ValueError: If event shape is unsupported
         """
-        if isinstance(event, dict) and "Records" in event and isinstance(event["Records"], list):
+        if (
+            isinstance(event, dict)
+            and "Records" in event
+            and isinstance(event["Records"], list)
+        ):
             if not event["Records"]:
                 raise ValueError("Records list is empty")
 

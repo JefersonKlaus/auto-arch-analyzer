@@ -51,10 +51,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r src/api/post/diagram-analyze/requirements.txt pytest ruff
+          python -m pip install -r src/api/post/diagram_analyze/requirements.txt pytest ruff
 
       - name: Run lint
-        run: ruff check --ignore E501 src/api/post/diagram-analyze src/test
+        run: ruff check --ignore E501 src/api/post/diagram_analyze src/test
 
       - name: Run pytest
         run: pytest src/test
