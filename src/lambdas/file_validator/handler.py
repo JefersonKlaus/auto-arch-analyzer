@@ -1,25 +1,23 @@
+"""
+Lambda handler for file validation state.
+Single Responsibility: Handle Lambda input/output and error propagation.
+"""
+
 import os
-import uuid
 
-
-def _extract_payload(event):
-    if isinstance(event, dict) and isinstance(event.get("body"), dict):
-        return event["body"]
-    return event if isinstance(event, dict) else {}
+from .orchestrator import FileValidatorOrchestrator
+from .errors import FILE_NOT_FOUND, INVALID_FORMAT
 
 
 def lambda_handler(event, context):
-    payload = _extract_payload(event)
+    region = os.environ.get("AWS_REGION", "us-east-1")
+    orchestrator = FileValidatorOrchestrator(region)
 
-    email = payload.get("email")
-    prompt = payload.get("prompt")
-    _ = payload.get("base64")
-
-    bucket = os.environ.get("S3_DIAGRAM_BUCKET", "pending-bucket")
-    object_key = f"inputs/{uuid.uuid4()}.bin"
-
-    return {
-        "email": email,
-        "prompt": prompt,
-        "s3_file_path": f"s3://{bucket}/{object_key}",
-    }
+    try:
+        return orchestrator.process_validation(event)
+    except (FILE_NOT_FOUND, INVALID_FORMAT):
+        # Re-raise domain exceptions with their exact names for Step Functions Catch.
+        raise
+    except Exception as exc:
+        print(f"Unexpected error in file validator handler: {str(exc)}")
+        raise

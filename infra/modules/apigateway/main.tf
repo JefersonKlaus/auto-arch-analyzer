@@ -13,8 +13,8 @@ module "analyze_resource" {
   source      = "./dynamic_apigateway"
   rest_api_id = aws_api_gateway_rest_api.analyzer_api.id
   parent_id   = aws_api_gateway_rest_api.analyzer_api.root_resource_id
-  path_full   = "diagram-analyze"
-  path_part   = "diagram-analyze"
+  path_full   = "diagram_analyze"
+  path_part   = "diagram_analyze"
 
   http_methods = ["POST"]
   lambda_function_names = {

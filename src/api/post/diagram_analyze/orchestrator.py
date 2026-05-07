@@ -5,9 +5,9 @@ Single Responsibility: Coordinate interaction between S3 and SQS components.
 
 from typing import Dict, Any
 
-from request_parser import RequestParser
-from s3_uploader import S3DiagramUploader
-from sqs_publisher import SQSPublisher
+from .request_parser import RequestParser
+from .s3_uploader import S3DiagramUploader
+from .sqs_publisher import SQSPublisher
 
 
 class AnalyzeOrchestrator:

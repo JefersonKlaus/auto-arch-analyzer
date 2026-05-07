@@ -2,7 +2,7 @@ module "analyze" {
   source = "./dynamic_lambda"
 
   lambda_role_arn      = var.lambda_role_arn
-  source_dir           = "${path.root}/../src/api/post/diagram-analyze"
+  source_dir           = "${path.root}/../src/api/post/diagram_analyze"
   handler              = "handler.lambda_handler"
   lambda_function_name = "analyze-arch"
   runtime              = "python3.12"

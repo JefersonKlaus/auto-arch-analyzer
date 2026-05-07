@@ -12,10 +12,10 @@ def lambda_handler(event, context):
         "architecture_summary": {
             "description": "Architecture analysis pending - AI processing not implemented yet",
             "architectural_style": "TBD",
-            "cloud_provider": "AWS"
+            "cloud_provider": "AWS",
         },
         "service_inventory": [],
-        "architecture_findings": []
+        "architecture_findings": [],
     }
 
     return {
