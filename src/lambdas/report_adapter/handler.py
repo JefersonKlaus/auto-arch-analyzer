@@ -6,9 +6,9 @@ Single Responsibility: Wire dependencies from environment and delegate to orches
 import json
 import os
 
-from dynamodb_repository import DynamoDBRepository
-from orchestrator import ReportAdapterOrchestrator
-from sqs_publisher import SQSPublisher
+from .dynamodb_repository import DynamoDBRepository
+from .orchestrator import ReportAdapterOrchestrator
+from .sqs_publisher import SQSPublisher
 
 
 def lambda_handler(event, context):

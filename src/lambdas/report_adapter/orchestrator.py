@@ -6,10 +6,10 @@ Single Responsibility: Coordinate the DynamoDB persistence and SQS notification 
 import uuid
 from typing import Any, Dict
 
-from dynamodb_repository import DynamoDBRepository
-from models import ReportAdapterRequest, ReportAdapterResult
-from request_parser import RequestParser
-from sqs_publisher import SQSPublisher
+from .dynamodb_repository import DynamoDBRepository
+from .models import ReportAdapterRequest, ReportAdapterResult
+from .request_parser import RequestParser
+from .sqs_publisher import SQSPublisher
 
 
 class ReportAdapterOrchestrator:

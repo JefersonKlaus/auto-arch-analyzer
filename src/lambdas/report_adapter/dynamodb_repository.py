@@ -9,7 +9,7 @@ from typing import Any, Dict
 import boto3
 from botocore.exceptions import ClientError
 
-from models import ReportAdapterRequest
+from .models import ReportAdapterRequest
 
 
 class DynamoDBRepository:
@@ -57,8 +57,6 @@ class DynamoDBRepository:
         try:
             self.table.put_item(Item=item)
         except ClientError as exc:
-            raise RuntimeError(
-                f"Failed to persist item to DynamoDB: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to persist item to DynamoDB: {exc}") from exc
 
         return item_id

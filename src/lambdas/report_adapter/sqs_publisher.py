@@ -55,8 +55,6 @@ class SQSPublisher:
                 },
             )
         except ClientError as exc:
-            raise RuntimeError(
-                f"Failed to send message to SQS: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to send message to SQS: {exc}") from exc
 
         return response["MessageId"]

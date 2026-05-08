@@ -5,7 +5,7 @@ Single Responsibility: Parse and extract the request from a Lambda event.
 
 from typing import Any, Dict
 
-from models import ReportAdapterRequest
+from .models import ReportAdapterRequest
 
 
 class RequestParser:
