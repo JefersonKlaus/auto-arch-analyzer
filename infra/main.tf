@@ -63,6 +63,8 @@ module "lambda" {
   sqs_ingestion_queue_arn        = module.queue.ingestion_queue_arn
   stepfunction_state_machine_arn = local.step_functions_workflow_arn
   common_layer_arn               = module.layers.common_layer_arn
+  dynamodb_table_name            = module.dynamodb.table_name
+  sqs_pdf_mail_queue_url         = module.queue.pdf_mail_queue_url
 }
 
 module "queue" {
