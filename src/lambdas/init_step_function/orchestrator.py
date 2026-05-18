@@ -5,8 +5,8 @@ Single Responsibility: Coordinate parsing and Step Functions execution.
 
 from typing import Any, Dict, Optional
 
-from lambdas.init_step_function.request_parser import RequestParser
-from lambdas.init_step_function.stepfunction_service import StepFunctionTriggerService
+from request_parser import RequestParser
+from stepfunction_service import StepFunctionTriggerService
 
 
 class InitOrchestrator:

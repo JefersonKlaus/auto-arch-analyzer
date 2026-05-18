@@ -9,7 +9,7 @@ from typing import Any, Dict
 import boto3
 from botocore.exceptions import ClientError
 
-from .models import ReportAdapterRequest
+from models import ReportAdapterRequest
 
 
 class DynamoDBRepository:

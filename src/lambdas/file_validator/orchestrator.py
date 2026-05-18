@@ -5,8 +5,8 @@ Single Responsibility: Coordinate parsing and S3 validation components.
 
 from typing import Any, Dict
 
-from .request_parser import RequestParser
-from .s3_validator import S3FileValidator
+from request_parser import RequestParser
+from s3_validator import S3FileValidator
 
 
 class FileValidatorOrchestrator:

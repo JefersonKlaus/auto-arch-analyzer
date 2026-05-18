@@ -5,17 +5,17 @@ These tests demonstrate how each component can be tested in isolation.
 Run with: python -m pytest src/test/test_analyze.py
 """
 
-import json
 import base64
-from unittest.mock import patch, MagicMock
+import json
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from api.post.diagram_analyze.models import AnalyzeRequest
+from api.post.diagram_analyze.orchestrator import AnalyzeOrchestrator
 from api.post.diagram_analyze.request_parser import RequestParser
 from api.post.diagram_analyze.s3_uploader import S3DiagramUploader
 from api.post.diagram_analyze.sqs_publisher import SQSPublisher
-from api.post.diagram_analyze.orchestrator import AnalyzeOrchestrator
 
 
 class TestAnalyzeRequest:
