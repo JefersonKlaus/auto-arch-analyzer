@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import boto3
 from botocore.exceptions import ClientError
 
-from .errors import FILE_NOT_FOUND, INVALID_FORMAT
+from errors import FILE_NOT_FOUND, INVALID_FORMAT
 
 MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
 SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}

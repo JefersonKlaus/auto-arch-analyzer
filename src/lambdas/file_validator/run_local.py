@@ -17,7 +17,7 @@ from handler import lambda_handler
 
 if __name__ == "__main__":
     event = {
-        "s3_file_path": "s3://auto-arch-analyzer-diagram-upload-dev/voce/95490a0e-diagram.png",
+        "s3_file_path": "s3://auto-arch-analyzer-diagram-upload-dev/Captura de tela 2025-11-13 004127.png",
         "email": "user@example.com",
         "prompt": "Analyze this architecture",
     }
