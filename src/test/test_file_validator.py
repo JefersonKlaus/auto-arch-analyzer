@@ -77,6 +77,25 @@ class TestRequestParser:
         assert payload["s3_file_path"] == "s3://bucket/file.png"
         assert payload["email"] == "test@example.com"
 
+    def test_parse_direct_invocation_event_with_bucket_and_key(self):
+        """Test parsing a direct Lambda invocation event with bucket/key input."""
+        direct_event = {
+            "s3_bucket": "auto-arch-analyzer-diagram-upload-dev",
+            "s3_key": "voce/73e05b72-diagram.png",
+            "email": "voce@exemplo.com",
+            "prompt": "Analise a arquitetura",
+        }
+
+        payload = RequestParser.parse_event(direct_event)
+
+        assert payload["s3_file_path"] == (
+            "s3://auto-arch-analyzer-diagram-upload-dev/voce/73e05b72-diagram.png"
+        )
+        assert payload["s3_bucket"] == "auto-arch-analyzer-diagram-upload-dev"
+        assert payload["s3_key"] == "voce/73e05b72-diagram.png"
+        assert payload["email"] == "voce@exemplo.com"
+        assert payload["prompt"] == "Analise a arquitetura"
+
     def test_parse_api_gateway_event(self):
         """Test parsing an API Gateway event."""
         api_gw_event = {
@@ -200,36 +219,34 @@ class TestFileValidatorOrchestrator:
     """Tests for FileValidatorOrchestrator."""
 
     @patch("lambdas.file_validator.orchestrator.S3FileValidator")
-    @patch("lambdas.file_validator.orchestrator.RequestParser.to_request")
-    @patch("lambdas.file_validator.orchestrator.RequestParser.parse_event")
     def test_process_validation_success(
         self,
-        mock_parse_event,
-        mock_to_request,
         mock_s3_validator_class,
     ):
         """Test successful end-to-end validation orchestration."""
         payload = {
-            "s3_file_path": "s3://bucket/diagram.png",
-            "email": "test@example.com",
-            "prompt": "Analyze",
+            "s3_bucket": "auto-arch-analyzer-diagram-upload-dev",
+            "s3_key": "voce/73e05b72-diagram.png",
+            "email": "voce@exemplo.com",
+            "prompt": "Analise a arquitetura",
         }
 
-        mock_parse_event.return_value = payload
-        mock_request = FileValidationRequest(**payload)
-        mock_to_request.return_value = mock_request
         mock_s3_validator = MagicMock()
         mock_s3_validator_class.return_value = mock_s3_validator
 
         orchestrator = FileValidatorOrchestrator(region="us-east-1")
         result = orchestrator.process_validation(payload)
 
-        mock_parse_event.assert_called_once_with(payload)
-        mock_to_request.assert_called_once_with(payload)
-        mock_s3_validator.validate_file.assert_called_once_with(
-            "s3://bucket/diagram.png"
+        assert result["s3_file_path"] == (
+            "s3://auto-arch-analyzer-diagram-upload-dev/voce/73e05b72-diagram.png"
         )
-        assert result == payload
+        assert result["s3_bucket"] == "auto-arch-analyzer-diagram-upload-dev"
+        assert result["s3_key"] == "voce/73e05b72-diagram.png"
+        mock_s3_validator.validate_file.assert_called_once_with(
+            "s3://auto-arch-analyzer-diagram-upload-dev/voce/73e05b72-diagram.png"
+        )
+        assert result["email"] == "voce@exemplo.com"
+        assert result["prompt"] == "Analise a arquitetura"
 
     def test_process_validation_error(self):
         """Test that validation errors from RequestParser are propagated."""

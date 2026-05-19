@@ -6,11 +6,26 @@ Single Responsibility: Parse and extract input data from Lambda events.
 import json
 from typing import Any, Dict
 
-from .models import FileValidationRequest
+from models import FileValidationRequest
 
 
 class RequestParser:
     """Parses incoming Step Function payloads into domain models."""
+
+    @staticmethod
+    def _build_s3_file_path(payload: Dict[str, Any]) -> str:
+        """Return the canonical S3 URI from the payload."""
+        s3_file_path = payload.get("s3_file_path")
+        if isinstance(s3_file_path, str) and s3_file_path.strip():
+            return s3_file_path
+
+        s3_bucket = payload.get("s3_bucket")
+        s3_key = payload.get("s3_key")
+
+        if isinstance(s3_bucket, str) and isinstance(s3_key, str):
+            return f"s3://{s3_bucket}/{s3_key}"
+
+        return ""
 
     @staticmethod
     def parse_event(event: Dict[str, Any]) -> Dict[str, Any]:
@@ -46,6 +61,14 @@ class RequestParser:
         if not isinstance(payload, dict):
             raise ValueError("Invalid payload: expected object")
 
+        s3_file_path = RequestParser._build_s3_file_path(payload)
+        if not s3_file_path:
+            raise ValueError(
+                "Invalid payload: missing s3_file_path or s3_bucket/s3_key"
+            )
+
+        payload["s3_file_path"] = s3_file_path
+
         return payload
 
     @staticmethod
@@ -64,9 +87,10 @@ class RequestParser:
         """
         try:
             return FileValidationRequest(
-                s3_file_path=payload.get("s3_file_path"),
-                email=payload.get("email"),
-                prompt=payload.get("prompt"),
+                s3_file_path=payload["s3_file_path"],
+                email=payload["email"],
+                prompt=payload["prompt"],
             )
-        except ValueError as exc:
+        except Exception as exc:
+            print(payload)
             raise ValueError(f"Invalid request: {str(exc)}") from exc
