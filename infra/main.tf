@@ -33,9 +33,10 @@ module "dynamodb" {
 module "iam" {
   source = "./modules/iam"
 
-  project_name   = var.project_name
-  aws_account_id = var.aws_account_id
-  aws_region     = var.aws_region
+  project_name                   = var.project_name
+  aws_account_id                 = var.aws_account_id
+  aws_region                     = var.aws_region
+  stepfunction_state_machine_arn = local.step_functions_workflow_arn
   s3_bucket_arns = [
     module.s3.diagram_upload_bucket_arn,
     module.s3.analysis_result_bucket_arn,
