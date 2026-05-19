@@ -92,8 +92,8 @@ class BedrockService():
         """
         Processa uma imagem de um bucket S3 usando a API AWS Bedrock (Claude 3 Vision)
         e retorna uma análise estruturada em JSON.
-
-        :param process_image_dto: DTO com os dados para processamento.
+        Args:
+            process_image_dto: DTO com os dados para processamento.
         :return: Um dicionário contendo a resposta do modelo Bedrock em JSON.
         :raises ValueError: Se o modelo não for suportado ou a resposta do modelo for inválida.
         :raises Exception: Para erros na recuperação de imagem ou chamada da API Bedrock.

@@ -30,11 +30,6 @@ def lambda_handler(event, context):
     """
     try:
         S3_BUCKET = os.environ.get("S3_DIAGRAM_BUCKET")
-
-        # Fail fast if configuration is missing
-        if not S3_BUCKET:
-            logger.critical("Missing required environment variable: S3_DIAGRAM_BUCKET")
-            raise RuntimeError("Missing required environment variable: S3_DIAGRAM_BUCKET")
         logger.info("AI Processor handler started.")
         payload = event if isinstance(event, dict) else {}
         dto: ProcessImageAIDTO = ProcessImageAIDTO.from_dict(payload)
