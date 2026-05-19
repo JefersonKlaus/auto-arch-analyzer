@@ -63,10 +63,14 @@ class RequestParser:
             ValueError: If required fields are missing or invalid
         """
         try:
+            s3_bucket = payload["s3_bucket"]
+            s3_key = payload["s3_key"]
+            s3_file_path = f"s3://{s3_bucket}/{s3_key}"
+
             return FileValidationRequest(
-                s3_file_path=payload.get("s3_file_path"),
-                email=payload.get("email"),
-                prompt=payload.get("prompt"),
+                s3_file_path=s3_file_path,
+                email=payload["email"],
+                prompt=payload["prompt"],
             )
-        except ValueError as exc:
+        except Exception as exc:
             raise ValueError(f"Invalid request: {str(exc)}") from exc

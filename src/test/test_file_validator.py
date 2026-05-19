@@ -115,6 +115,23 @@ class TestRequestParser:
         with pytest.raises(ValueError, match="Invalid request"):
             RequestParser.to_request({"email": "test@example.com"})
 
+    def test_to_request_builds_s3_file_path_from_bucket_and_key(self):
+        """Test that bucket/key payloads are normalized to s3_file_path."""
+        request = RequestParser.to_request(
+            {
+                "s3_bucket": "auto-arch-analyzer-diagram-upload-dev",
+                "s3_key": "voce/ffc9ad9a-diagram.png",
+                "email": "voce@exemplo.com",
+                "prompt": "Analise a arquitetura",
+            }
+        )
+
+        assert request.s3_file_path == (
+            "s3://auto-arch-analyzer-diagram-upload-dev/voce/ffc9ad9a-diagram.png"
+        )
+        assert request.email == "voce@exemplo.com"
+        assert request.prompt == "Analise a arquitetura"
+
 
 class TestS3FileValidator:
     """Tests for S3FileValidator."""
