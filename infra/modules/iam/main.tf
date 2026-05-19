@@ -32,6 +32,7 @@ resource "aws_iam_role_policy" "lambda_s3_dynamodb" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
+          "s3:ListBucket"
         ]
         Resource = [for bucket_arn in var.s3_bucket_arns : "${bucket_arn}/*"]
       },
