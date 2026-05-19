@@ -35,6 +35,7 @@ def lambda_handler(event, context):
         S3_BUCKET = payload["s3_bucket"] if payload["s3_bucket"] else bucket_from_env
 
         dto: ProcessImageAIDTO = ProcessImageAIDTO.from_dict(payload)
+        logger.info("Attempting to get object with key: %s", dto.s3_file_path)
         orchestrator = AIProcessorOrchestrator(s3_bucket_name=S3_BUCKET)
 
         result = orchestrator.process_diagram(dto)
