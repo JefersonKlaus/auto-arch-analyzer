@@ -87,3 +87,4 @@ Thumbs.db
 *.tmp
 .env.local
 .env.*.local
+src/lambdas/run_local.py
