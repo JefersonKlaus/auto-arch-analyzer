@@ -69,6 +69,9 @@ resource "aws_iam_role_policy" "lambda_bedrock" {
       Effect   = "Allow"
       Action   = ["bedrock:InvokeModel"]
       Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_model_id}"
+      # Granting access to all Claude 3 models for flexibility.
+      # This avoids access errors if the model ID in the code changes between Haiku, Sonnet, etc.
+      Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/anthropic.claude-3-*"
     }]
   })
 }

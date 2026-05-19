@@ -41,5 +41,5 @@ variable "log_retention_days" {
 variable "bedrock_model_id" {
   description = "The ID of the Bedrock model to be used by the AI Processor Lambda."
   type        = string
-  default     = "anthropic.claude-3-sonnet-20240229-v1:0"
+  default     = "anthropic.claude-3-haiku-20240307-v1:0"
 }
