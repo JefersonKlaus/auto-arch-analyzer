@@ -29,11 +29,14 @@ def lambda_handler(event, context):
         caller (e.g., passed to the next state in a Step Function).
     """
     try:
-        bucket_from_env = os.environ.get("S3_DIAGRAM_BUCKET")
+        S3_BUCKET = os.environ.get("S3_DIAGRAM_BUCKET")
+
+        # Fail fast if configuration is missing
+        if not S3_BUCKET:
+            logger.critical("Missing required environment variable: S3_DIAGRAM_BUCKET")
+            raise RuntimeError("Missing required environment variable: S3_DIAGRAM_BUCKET")
         logger.info("AI Processor handler started.")
         payload = event if isinstance(event, dict) else {}
-        S3_BUCKET = payload["s3_bucket"] if payload["s3_bucket"] else bucket_from_env
-
         dto: ProcessImageAIDTO = ProcessImageAIDTO.from_dict(payload)
         orchestrator = AIProcessorOrchestrator(s3_bucket_name=S3_BUCKET)
 
@@ -53,3 +56,36 @@ def lambda_handler(event, context):
         logger.exception("Unexpected error in AI Processor handler: %s", e)
         # Re-raise to fail the Lambda execution
         raise
+
+
+if __name__ == "__main__":
+    sqs_message = {
+        "Records": [
+            {
+                "messageId": "string-gerado-pelo-sqs",
+                "receiptHandle": "string-gerado-pelo-sqs",
+                "body": "{\"email\": \"emailtest@gmail.com\", \"prompt\": null, \"s3_file_path\": \"voce/95490a0e-diagram.png\"}",
+                "attributes": {
+                    "ApproximateReceiveCount": "1",
+                    "SentTimestamp": "1678886400000",
+                    "SenderId": "AIDAIXMPLSPXMPL",
+                    "ApproximateFirstReceiveTimestamp": "1678886400000"
+                },
+                "messageAttributes": {
+                    "Type": {
+                        "stringValue": "DiagramUpload",
+                        "dataType": "String"
+                    },
+                    "Email": {
+                        "stringValue": "user@example.com",
+                        "dataType": "String"
+                    }
+                },
+                "md5OfBody": "md5-hash-do-body",
+                "eventSource": "aws:sqs",
+                "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:auto-arch-analyzer-ingestion-queue-dev",
+                "awsRegion": "us-east-1"
+            }
+        ]
+    }
+    result = lambda_handler(sqs_message, None)
