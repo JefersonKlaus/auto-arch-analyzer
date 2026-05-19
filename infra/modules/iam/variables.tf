@@ -33,3 +33,7 @@ variable "lambda_arns_for_sfn" {
   type        = list(string)
   default     = []
 }
+variable "stepfunction_state_machine_arn" {
+  description = "ARN of the Step Functions state machine started by the init Lambda"
+  type        = string
+}

@@ -94,8 +94,10 @@ module "report_adapter" {
   ])
 
   environment_variables = {
-    ENVIRONMENT  = var.environment
-    PROJECT_NAME = var.project_name
+    ENVIRONMENT            = var.environment
+    PROJECT_NAME           = var.project_name
+    DYNAMODB_TABLE_NAME    = var.dynamodb_table_name
+    SQS_PDF_MAIL_QUEUE_URL = var.sqs_pdf_mail_queue_url
   }
 }
 

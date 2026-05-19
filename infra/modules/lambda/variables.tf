@@ -39,3 +39,13 @@ variable "common_layer_arn" {
   description = "ARN of the shared common Lambda layer"
   type        = string
 }
+
+variable "dynamodb_table_name" {
+  description = "DynamoDB table name for persisting analysis results"
+  type        = string
+}
+
+variable "sqs_pdf_mail_queue_url" {
+  description = "SQS URL for the PDF/Mail queue"
+  type        = string
+}

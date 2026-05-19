@@ -33,9 +33,10 @@ module "dynamodb" {
 module "iam" {
   source = "./modules/iam"
 
-  project_name   = var.project_name
-  aws_account_id = var.aws_account_id
-  aws_region     = var.aws_region
+  project_name                   = var.project_name
+  aws_account_id                 = var.aws_account_id
+  aws_region                     = var.aws_region
+  stepfunction_state_machine_arn = local.step_functions_workflow_arn
   s3_bucket_arns = [
     module.s3.diagram_upload_bucket_arn,
     module.s3.analysis_result_bucket_arn,
@@ -70,6 +71,8 @@ module "lambda" {
   sqs_ingestion_queue_arn        = module.queue.ingestion_queue_arn
   stepfunction_state_machine_arn = local.step_functions_workflow_arn
   common_layer_arn               = module.layers.common_layer_arn
+  dynamodb_table_name            = module.dynamodb.table_name
+  sqs_pdf_mail_queue_url         = module.queue.pdf_mail_queue_url
 }
 
 module "queue" {
