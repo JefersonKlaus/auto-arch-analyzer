@@ -4,9 +4,9 @@ import base64
 import logging
 import uuid
 from datetime import datetime
-from lambdas.ai_processor.s3_service import S3Service
+from s3_service import S3Service
 from typing import Any, Dict, Optional
-from lambdas.ai_processor.models import ProcessImageAIDTO
+from models import ProcessImageAIDTO
 from botocore.config import Config
 
 

@@ -11,11 +11,11 @@ import pytest
 # This adds the 'src' directory to the path.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lambdas.ai_processor.decorators import parse_message
-from lambdas.ai_processor.handler import lambda_handler
-from lambdas.ai_processor.models import ProcessImageAIDTO
-from lambdas.ai_processor.orchestrator import AIProcessorOrchestrator
-from lambdas.ai_processor.bedrock_service import BedrockService
+from decorators import parse_message
+from handler import lambda_handler
+from models import ProcessImageAIDTO
+from orchestrator import AIProcessorOrchestrator
+from bedrock_service import BedrockService
 
 test_sqs_message = {
     "Records": [
@@ -80,7 +80,7 @@ class TestDecorators:
 class TestAIProcessorHandler:
     """Tests for the main lambda_handler."""
 
-    @patch('lambdas.ai_processor.handler.AIProcessorOrchestrator')
+    @patch('handler.AIProcessorOrchestrator')
     @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
     def test_lambda_handler_success(self, mock_orchestrator_cls):
         """Tests the happy path of the lambda handler."""
@@ -140,7 +140,7 @@ class TestAIProcessorHandler:
         with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
             lambda_handler(sqs_event, None)
 
-    @patch('lambdas.ai_processor.handler.AIProcessorOrchestrator')
+    @patch('handler.AIProcessorOrchestrator')
     @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
     def test_lambda_handler_orchestrator_exception(self, mock_orchestrator_cls):
         """Tests that exceptions from the orchestrator are propagated."""
@@ -201,8 +201,8 @@ class TestBedrockService:
             prompt="Analyze this"
         )
 
-    @patch('lambdas.ai_processor.bedrock_service.boto3.client')
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
+    @patch('bedrock_service.boto3.client')
+    @patch('bedrock_service.S3Service')
     def test_process_image_success(self, mock_s3_service_cls, mock_boto_client, dto):
         """Tests successful image processing."""
         # Arrange
@@ -233,8 +233,8 @@ class TestBedrockService:
         body = json.loads(invoke_model_args['body'])
         assert body['messages'][0]['content'][0]['source']['media_type'] == 'image/png'
 
-    @patch('lambdas.ai_processor.bedrock_service.boto3.client')
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
+    @patch('bedrock_service.boto3.client')
+    @patch('bedrock_service.S3Service')
     def test_process_image_invalid_json_response(self, mock_s3_service_cls, mock_boto_client, dto):
         """Tests handling of a non-JSON response from the model."""
         # Arrange
@@ -256,8 +256,8 @@ class TestBedrockService:
         with pytest.raises(ValueError, match="Resposta do modelo não é um JSON válido."):
             service.process_image(dto)
 
-    @patch('lambdas.ai_processor.bedrock_service.boto3.client')
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
+    @patch('bedrock_service.boto3.client')
+    @patch('bedrock_service.S3Service')
     def test_process_image_unsupported_model(self, mock_s3_service_cls, mock_boto_client, dto):
         """Tests that an error is raised for an unsupported model."""
         # Arrange
@@ -272,7 +272,7 @@ class TestBedrockService:
         with pytest.raises(ValueError, match="Unsupported model"):
             service.process_image(dto)
 
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
+    @patch('bedrock_service.S3Service')
     def test_get_image_success(self, mock_s3_service_cls):
         """Tests successful image retrieval and media type detection."""
         # Arrange
@@ -299,7 +299,7 @@ class TestBedrockService:
             assert media_type == expected_media_type
             mock_s3_instance.get_image_from_s3.assert_called_with(s3_key)
 
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
+    @patch('bedrock_service.S3Service')
     def test_get_image_no_s3_key(self, mock_s3_service_cls):
         """Tests that an error is raised if the S3 key is empty."""
         # Arrange
@@ -309,8 +309,8 @@ class TestBedrockService:
         with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
             service.get_image("")
 
-    @patch('lambdas.ai_processor.bedrock_service.uuid.uuid4', return_value='test-uuid')
-    @patch('lambdas.ai_processor.bedrock_service.datetime')
+    @patch('bedrock_service.uuid.uuid4', return_value='test-uuid')
+    @patch('bedrock_service.datetime')
     def test_get_prompt_text(self, mock_datetime, mock_uuid):
         """Tests the generation of the prompt text."""
         # Arrange

@@ -6,8 +6,8 @@ Single Responsibility: Coordinate the AI analysis of a diagram.
 from typing import Any, Dict, Optional
 import logging
 
-from lambdas.ai_processor.bedrock_service import BedrockService
-from lambdas.ai_processor.models import ProcessImageAIDTO
+from bedrock_service import BedrockService
+from models import ProcessImageAIDTO
 
 logger = logging.getLogger(__name__)
 
