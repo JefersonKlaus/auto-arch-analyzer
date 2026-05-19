@@ -28,7 +28,7 @@ class AIProcessorOrchestrator:
             bedrock_service: Optional injected service for testing.
         """
         self.bedrock_service = bedrock_service or BedrockService(
-            model="anthropic.claude-3-haiku-20240307-v1:0",
+            model="anthropic.claude-3-sonnet-20240229-v1:0",
             s3_bucket_name=s3_bucket_name,
         )
 
