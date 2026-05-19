@@ -29,9 +29,11 @@ def lambda_handler(event, context):
         caller (e.g., passed to the next state in a Step Function).
     """
     try:
-        S3_BUCKET = os.environ.get("S3_DIAGRAM_BUCKET")
+        bucket_from_env = os.environ.get("S3_DIAGRAM_BUCKET")
         logger.info("AI Processor handler started.")
         payload = event if isinstance(event, dict) else {}
+        S3_BUCKET = payload["s3_bucket"] if payload["s3_bucket"] else bucket_from_env
+
         dto: ProcessImageAIDTO = ProcessImageAIDTO.from_dict(payload)
         orchestrator = AIProcessorOrchestrator(s3_bucket_name=S3_BUCKET)
 
