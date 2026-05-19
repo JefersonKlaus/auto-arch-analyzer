@@ -22,3 +22,8 @@ variable "dynamodb_table_arn" {
   description = "ARN of the DynamoDB table used by Lambda"
   type        = string
 }
+
+variable "stepfunction_state_machine_arn" {
+  description = "ARN of the Step Functions state machine started by the init Lambda"
+  type        = string
+}

@@ -65,6 +65,21 @@ resource "aws_iam_role_policy" "lambda_bedrock" {
   })
 }
 
+resource "aws_iam_role_policy" "lambda_step_functions" {
+  name = "${var.project_name}-step-functions-policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "StartWorkflowExecution"
+      Effect   = "Allow"
+      Action   = ["states:StartExecution"]
+      Resource = var.stepfunction_state_machine_arn
+    }]
+  })
+}
+
 resource "aws_iam_role_policy" "lambda_sqs" {
   name = "${var.project_name}-sqs-policy"
   role = aws_iam_role.lambda_role.id
