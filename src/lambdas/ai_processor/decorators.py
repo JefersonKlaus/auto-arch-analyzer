@@ -8,6 +8,7 @@ def body_parser(func):
     def wrapper(event, context):
         msg = parse_message(event)
         return func(msg, context)
+
     return wrapper
 
 
@@ -32,7 +33,11 @@ def parse_message(event: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _extract_from_sqs(event: Dict[str, Any]):
-    if isinstance(event, dict) and "Records" in event and isinstance(event["Records"], list):
+    if (
+        isinstance(event, dict)
+        and "Records" in event
+        and isinstance(event["Records"], list)
+    ):
         if not event["Records"]:
             raise ValueError("Records list is empty")
 

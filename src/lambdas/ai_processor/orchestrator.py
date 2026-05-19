@@ -6,8 +6,8 @@ Single Responsibility: Coordinate the AI analysis of a diagram.
 from typing import Any, Dict, Optional
 import logging
 
-from lambdas.ai_processor.bedrock_service import BedrockService
-from lambdas.ai_processor.models import ProcessImageAIDTO
+from bedrock_service import BedrockService
+from models import ProcessImageAIDTO
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class AIProcessorOrchestrator:
         """
         self.bedrock_service = bedrock_service or BedrockService(
             model="anthropic.claude-3-haiku-20240307-v1:0",
-            s3_bucket_name=s3_bucket_name
+            s3_bucket_name=s3_bucket_name,
         )
 
     def process_diagram(self, process_image_dto: ProcessImageAIDTO) -> Dict[str, Any]:
@@ -42,8 +42,9 @@ class AIProcessorOrchestrator:
         Returns:
             A dictionary containing the technical analysis from the AI model.
         """
-        logger.info("Starting diagram analysis for s3_path: %s",
-                    process_image_dto.s3_file_path)
+        logger.info(
+            "Starting diagram analysis for s3_path: %s", process_image_dto.s3_file_path
+        )
         analysis_result = self.bedrock_service.process_image(process_image_dto)
         logger.info("Successfully completed diagram analysis.")
         return analysis_result

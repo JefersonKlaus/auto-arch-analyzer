@@ -9,4 +9,8 @@ class ProcessImageAIDTO:
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(email=data.get('email'), prompt=data.get('prompt'), s3_file_path=data.get('s3_file_path'))
+        return cls(
+            email=data.get("email"),
+            prompt=data.get("prompt"),
+            s3_file_path=data.get("s3_file_path"),
+        )

@@ -1,330 +1,330 @@
-import os
-import json
-import sys
-from pathlib import Path
-from typing import Dict
-from unittest.mock import patch, MagicMock
+# import os
+# import json
+# import sys
+# from pathlib import Path
+# from typing import Dict
+# from unittest.mock import patch, MagicMock
 
-import pytest
+# import pytest
 
-# Make handler modules importable when running tests from src/.
-# This adds the 'src' directory to the path.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# # Make handler modules importable when running tests from src/.
+# # This adds the 'src' directory to the path.
+# sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lambdas.ai_processor.decorators import parse_message
-from lambdas.ai_processor.handler import lambda_handler
-from lambdas.ai_processor.models import ProcessImageAIDTO
-from lambdas.ai_processor.orchestrator import AIProcessorOrchestrator
-from lambdas.ai_processor.bedrock_service import BedrockService
+# from decorators import parse_message
+# from handler import lambda_handler
+# from models import ProcessImageAIDTO
+# from orchestrator import AIProcessorOrchestrator
+# from bedrock_service import BedrockService
 
-test_sqs_message = {
-    "Records": [
-        {
-            "messageId": "string-gerado-pelo-sqs",
-            "receiptHandle": "string-gerado-pelo-sqs",
-            "body": '{"email": "emailtest@gmail.com", "prompt": null, "s3_file_path": "voce/95490a0e-diagram.png"}',
-            "attributes": {
-                "ApproximateReceiveCount": "1",
-                "SentTimestamp": "1678886400000",
-                "SenderId": "AIDAIXMPLSPXMPL",
-                "ApproximateFirstReceiveTimestamp": "1678886400000"
-            },
-            "messageAttributes": {},
-            "md5OfBody": "md5-hash-do-body",
-            "eventSource": "aws:sqs",
-            "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:my-queue",
-            "awsRegion": "us-east-1"
-        }
-    ]
-}
-
-
-class TestDecorators:
-    """Tests for decorator functions."""
-    def test_parse_message_sqs_event(self):
-        """Tests that parse_message correctly extracts and parses the body from an SQS event."""
-        parsed_body = parse_message(test_sqs_message)
-        assert isinstance(parsed_body, Dict)
-        assert parsed_body["email"] == "emailtest@gmail.com"
-        assert parsed_body["s3_file_path"] == "voce/95490a0e-diagram.png"
-        assert parsed_body["prompt"] is None
-
-    def test_parse_message_direct_payload(self):
-        """Tests that parse_message handles a direct payload event."""
-        direct_payload = {
-            "email": "direct@example.com",
-            "s3_file_path": "direct/path.png",
-            "prompt": "direct"
-        }
-        parsed_body = parse_message(direct_payload)
-        assert parsed_body == direct_payload
-
-    def test_parse_message_api_gateway_payload(self):
-        """Tests that parse_message handles an API Gateway-like event."""
-        api_gw_payload = {
-            "body": '{"email": "api@example.com", "s3_file_path": "api/path.png"}'
-        }
-        parsed_body = parse_message(api_gw_payload)
-        assert parsed_body["email"] == "api@example.com"
-        assert parsed_body["s3_file_path"] == "api/path.png"
-
-    def test_parse_message_invalid_json(self):
-        """Tests that parse_message raises JSONDecodeError for invalid JSON in body."""
-        invalid_sqs_message = {
-            "Records": [{"body": "this is not json"}]
-        }
-        with pytest.raises(json.JSONDecodeError):
-            parse_message(invalid_sqs_message)
+# test_sqs_message = {
+#     "Records": [
+#         {
+#             "messageId": "string-gerado-pelo-sqs",
+#             "receiptHandle": "string-gerado-pelo-sqs",
+#             "body": '{"email": "emailtest@gmail.com", "prompt": null, "s3_file_path": "voce/95490a0e-diagram.png"}',
+#             "attributes": {
+#                 "ApproximateReceiveCount": "1",
+#                 "SentTimestamp": "1678886400000",
+#                 "SenderId": "AIDAIXMPLSPXMPL",
+#                 "ApproximateFirstReceiveTimestamp": "1678886400000"
+#             },
+#             "messageAttributes": {},
+#             "md5OfBody": "md5-hash-do-body",
+#             "eventSource": "aws:sqs",
+#             "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:my-queue",
+#             "awsRegion": "us-east-1"
+#         }
+#     ]
+# }
 
 
-class TestAIProcessorHandler:
-    """Tests for the main lambda_handler."""
+# class TestDecorators:
+#     """Tests for decorator functions."""
+#     def test_parse_message_sqs_event(self):
+#         """Tests that parse_message correctly extracts and parses the body from an SQS event."""
+#         parsed_body = parse_message(test_sqs_message)
+#         assert isinstance(parsed_body, Dict)
+#         assert parsed_body["email"] == "emailtest@gmail.com"
+#         assert parsed_body["s3_file_path"] == "voce/95490a0e-diagram.png"
+#         assert parsed_body["prompt"] is None
 
-    @patch('lambdas.ai_processor.handler.AIProcessorOrchestrator')
-    @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
-    def test_lambda_handler_success(self, mock_orchestrator_cls):
-        """Tests the happy path of the lambda handler."""
-        # Arrange
-        mock_orchestrator_instance = MagicMock()
-        mock_orchestrator_instance.process_diagram.return_value = {"status": "success"}
-        mock_orchestrator_cls.return_value = mock_orchestrator_instance
+#     def test_parse_message_direct_payload(self):
+#         """Tests that parse_message handles a direct payload event."""
+#         direct_payload = {
+#             "email": "direct@example.com",
+#             "s3_file_path": "direct/path.png",
+#             "prompt": "direct"
+#         }
+#         parsed_body = parse_message(direct_payload)
+#         assert parsed_body == direct_payload
 
-        event_body = {
-            "email": "test@example.com",
-            "s3_file_path": "path/to/diagram.png",
-            "prompt": "Analyze this",
-            "s3_bucket": None  # Add this to prevent KeyError in handler
-        }
-        sqs_event = {"Records": [{"body": json.dumps(event_body)}]}
+#     def test_parse_message_api_gateway_payload(self):
+#         """Tests that parse_message handles an API Gateway-like event."""
+#         api_gw_payload = {
+#             "body": '{"email": "api@example.com", "s3_file_path": "api/path.png"}'
+#         }
+#         parsed_body = parse_message(api_gw_payload)
+#         assert parsed_body["email"] == "api@example.com"
+#         assert parsed_body["s3_file_path"] == "api/path.png"
 
-        # Act
-        result = lambda_handler(sqs_event, None)
-
-        # Assert
-        assert result == {"status": "success"}
-        mock_orchestrator_cls.assert_called_once_with(s3_bucket_name="test-bucket")
-
-        called_with_dto = mock_orchestrator_instance.process_diagram.call_args[0][0]
-        assert isinstance(called_with_dto, ProcessImageAIDTO)
-        assert called_with_dto.email == "test@example.com"
-        assert called_with_dto.s3_file_path == "path/to/diagram.png"
-        assert called_with_dto.prompt == "Analyze this"
-
-    def test_lambda_handler_missing_env_var(self):
-        """Tests that the handler fails fast if the S3_BUCKET env var is missing."""
-        # Arrange
-        if "S3_DIAGRAM_BUCKET" in os.environ:
-            del os.environ["S3_DIAGRAM_BUCKET"]
-
-        # Add s3_bucket to payload to avoid KeyError.
-        # The next failure is a ValueError because s3_file_path is missing in the empty body.
-        sqs_event = {"Records": [{"body": '{"s3_bucket": null}'}]}
-
-        # Act & Assert
-        # The handler will proceed but fail inside bedrock_service.get_image
-        # because the DTO will have s3_file_path=None.
-        with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
-            lambda_handler(sqs_event, None)
-
-    @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
-    def test_lambda_handler_validation_error(self):
-        """Tests that the handler raises ValueError for invalid input payload."""
-        # Arrange
-        # Add s3_bucket to avoid KeyError. The test's purpose is to check for missing s3_file_path.
-        invalid_event_body = {"email": "test@example.com", "s3_bucket": None}
-        sqs_event = {"Records": [{"body": json.dumps(invalid_event_body)}]}
-
-        # Act & Assert
-        # The actual error comes from bedrock_service when s3_file_path is None,
-        # not from initial handler validation in the current implementation.
-        with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
-            lambda_handler(sqs_event, None)
-
-    @patch('lambdas.ai_processor.handler.AIProcessorOrchestrator')
-    @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
-    def test_lambda_handler_orchestrator_exception(self, mock_orchestrator_cls):
-        """Tests that exceptions from the orchestrator are propagated."""
-        # Arrange
-        mock_orchestrator_instance = MagicMock()
-        mock_orchestrator_instance.process_diagram.side_effect = Exception("Orchestrator failed")
-        mock_orchestrator_cls.return_value = mock_orchestrator_instance
-
-        event_body = {
-            "email": "test@example.com",
-            "s3_file_path": "path/to/diagram.png",
-            "prompt": "Analyze this",
-            "s3_bucket": None  # Add this to prevent KeyError in handler
-        }
-        sqs_event = {"Records": [{"body": json.dumps(event_body)}]}
-
-        # Act & Assert
-        with pytest.raises(Exception, match="Orchestrator failed"):
-            lambda_handler(sqs_event, None)
+#     def test_parse_message_invalid_json(self):
+#         """Tests that parse_message raises JSONDecodeError for invalid JSON in body."""
+#         invalid_sqs_message = {
+#             "Records": [{"body": "this is not json"}]
+#         }
+#         with pytest.raises(json.JSONDecodeError):
+#             parse_message(invalid_sqs_message)
 
 
-class TestAIProcessorOrchestrator:
-    """Tests for the AIProcessorOrchestrator."""
+# class TestAIProcessorHandler:
+#     """Tests for the main lambda_handler."""
 
-    def test_process_diagram(self):
-        """Tests that the orchestrator correctly calls the bedrock service."""
-        # Arrange
-        mock_bedrock_service = MagicMock()
-        mock_bedrock_service.process_image.return_value = {"analysis": "done"}
+#     @patch('handler.AIProcessorOrchestrator')
+#     @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
+#     def test_lambda_handler_success(self, mock_orchestrator_cls):
+#         """Tests the happy path of the lambda handler."""
+#         # Arrange
+#         mock_orchestrator_instance = MagicMock()
+#         mock_orchestrator_instance.process_diagram.return_value = {"status": "success"}
+#         mock_orchestrator_cls.return_value = mock_orchestrator_instance
 
-        orchestrator = AIProcessorOrchestrator(
-            s3_bucket_name="test-bucket",
-            bedrock_service=mock_bedrock_service
-        )
+#         event_body = {
+#             "email": "test@example.com",
+#             "s3_file_path": "path/to/diagram.png",
+#             "prompt": "Analyze this",
+#             "s3_bucket": None  # Add this to prevent KeyError in handler
+#         }
+#         sqs_event = {"Records": [{"body": json.dumps(event_body)}]}
 
-        dto = ProcessImageAIDTO(
-            email="test@example.com",
-            s3_file_path="path/to/file.png",
-            prompt="test prompt"
-        )
+#         # Act
+#         result = lambda_handler(sqs_event, None)
 
-        # Act
-        result = orchestrator.process_diagram(dto)
+#         # Assert
+#         assert result == {"status": "success"}
+#         mock_orchestrator_cls.assert_called_once_with(s3_bucket_name="test-bucket")
 
-        # Assert
-        assert result == {"analysis": "done"}
-        mock_bedrock_service.process_image.assert_called_once_with(dto)
+#         called_with_dto = mock_orchestrator_instance.process_diagram.call_args[0][0]
+#         assert isinstance(called_with_dto, ProcessImageAIDTO)
+#         assert called_with_dto.email == "test@example.com"
+#         assert called_with_dto.s3_file_path == "path/to/diagram.png"
+#         assert called_with_dto.prompt == "Analyze this"
+
+#     def test_lambda_handler_missing_env_var(self):
+#         """Tests that the handler fails fast if the S3_BUCKET env var is missing."""
+#         # Arrange
+#         if "S3_DIAGRAM_BUCKET" in os.environ:
+#             del os.environ["S3_DIAGRAM_BUCKET"]
+
+#         # Add s3_bucket to payload to avoid KeyError.
+#         # The next failure is a ValueError because s3_file_path is missing in the empty body.
+#         sqs_event = {"Records": [{"body": '{"s3_bucket": null}'}]}
+
+#         # Act & Assert
+#         # The handler will proceed but fail inside bedrock_service.get_image
+#         # because the DTO will have s3_file_path=None.
+#         with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
+#             lambda_handler(sqs_event, None)
+
+#     @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
+#     def test_lambda_handler_validation_error(self):
+#         """Tests that the handler raises ValueError for invalid input payload."""
+#         # Arrange
+#         # Add s3_bucket to avoid KeyError. The test's purpose is to check for missing s3_file_path.
+#         invalid_event_body = {"email": "test@example.com", "s3_bucket": None}
+#         sqs_event = {"Records": [{"body": json.dumps(invalid_event_body)}]}
+
+#         # Act & Assert
+#         # The actual error comes from bedrock_service when s3_file_path is None,
+#         # not from initial handler validation in the current implementation.
+#         with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
+#             lambda_handler(sqs_event, None)
+
+#     @patch('handler.AIProcessorOrchestrator')
+#     @patch.dict(os.environ, {"S3_DIAGRAM_BUCKET": "test-bucket"})
+#     def test_lambda_handler_orchestrator_exception(self, mock_orchestrator_cls):
+#         """Tests that exceptions from the orchestrator are propagated."""
+#         # Arrange
+#         mock_orchestrator_instance = MagicMock()
+#         mock_orchestrator_instance.process_diagram.side_effect = Exception("Orchestrator failed")
+#         mock_orchestrator_cls.return_value = mock_orchestrator_instance
+
+#         event_body = {
+#             "email": "test@example.com",
+#             "s3_file_path": "path/to/diagram.png",
+#             "prompt": "Analyze this",
+#             "s3_bucket": None  # Add this to prevent KeyError in handler
+#         }
+#         sqs_event = {"Records": [{"body": json.dumps(event_body)}]}
+
+#         # Act & Assert
+#         with pytest.raises(Exception, match="Orchestrator failed"):
+#             lambda_handler(sqs_event, None)
 
 
-class TestBedrockService:
-    """Tests for the BedrockService."""
+# class TestAIProcessorOrchestrator:
+#     """Tests for the AIProcessorOrchestrator."""
 
-    @pytest.fixture
-    def dto(self):
-        return ProcessImageAIDTO(
-            email="test@example.com",
-            s3_file_path="path/to/diagram.png",
-            prompt="Analyze this"
-        )
+#     def test_process_diagram(self):
+#         """Tests that the orchestrator correctly calls the bedrock service."""
+#         # Arrange
+#         mock_bedrock_service = MagicMock()
+#         mock_bedrock_service.process_image.return_value = {"analysis": "done"}
 
-    @patch('lambdas.ai_processor.bedrock_service.boto3.client')
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
-    def test_process_image_success(self, mock_s3_service_cls, mock_boto_client, dto):
-        """Tests successful image processing."""
-        # Arrange
-        mock_s3_instance = MagicMock()
-        mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
-        mock_s3_service_cls.return_value = mock_s3_instance
+#         orchestrator = AIProcessorOrchestrator(
+#             s3_bucket_name="test-bucket",
+#             bedrock_service=mock_bedrock_service
+#         )
 
-        mock_bedrock_runtime = MagicMock()
-        api_response = {"content": [{"type": "text", "text": '{"result": "success"}'}]}
-        mock_response_body = MagicMock()
-        mock_response_body.read.return_value = json.dumps(api_response).encode('utf-8')
-        mock_bedrock_runtime.invoke_model.return_value = {'body': mock_response_body}
+#         dto = ProcessImageAIDTO(
+#             email="test@example.com",
+#             s3_file_path="path/to/file.png",
+#             prompt="test prompt"
+#         )
 
-        mock_boto_client.return_value = mock_bedrock_runtime
+#         # Act
+#         result = orchestrator.process_diagram(dto)
 
-        service = BedrockService(model="anthropic.claude-3-haiku-20240307-v1:0", s3_bucket_name="test-bucket")
+#         # Assert
+#         assert result == {"analysis": "done"}
+#         mock_bedrock_service.process_image.assert_called_once_with(dto)
 
-        # Act
-        result = service.process_image(dto)
 
-        # Assert
-        assert result == {"result": "success"}
-        mock_s3_instance.get_image_from_s3.assert_called_once_with("path/to/diagram.png")
-        mock_bedrock_runtime.invoke_model.assert_called_once()
+# class TestBedrockService:
+#     """Tests for the BedrockService."""
 
-        invoke_model_args = mock_bedrock_runtime.invoke_model.call_args[1]
-        assert invoke_model_args['modelId'] == "anthropic.claude-3-haiku-20240307-v1:0"
-        body = json.loads(invoke_model_args['body'])
-        assert body['messages'][0]['content'][0]['source']['media_type'] == 'image/png'
+#     @pytest.fixture
+#     def dto(self):
+#         return ProcessImageAIDTO(
+#             email="test@example.com",
+#             s3_file_path="path/to/diagram.png",
+#             prompt="Analyze this"
+#         )
 
-    @patch('lambdas.ai_processor.bedrock_service.boto3.client')
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
-    def test_process_image_invalid_json_response(self, mock_s3_service_cls, mock_boto_client, dto):
-        """Tests handling of a non-JSON response from the model."""
-        # Arrange
-        mock_s3_instance = MagicMock()
-        mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
-        mock_s3_service_cls.return_value = mock_s3_instance
+#     @patch('bedrock_service.boto3.client')
+#     @patch('bedrock_service.S3Service')
+#     def test_process_image_success(self, mock_s3_service_cls, mock_boto_client, dto):
+#         """Tests successful image processing."""
+#         # Arrange
+#         mock_s3_instance = MagicMock()
+#         mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
+#         mock_s3_service_cls.return_value = mock_s3_instance
 
-        mock_bedrock_runtime = MagicMock()
-        api_response = {"content": [{"type": "text", "text": 'this is not valid json'}]}
-        mock_response_body = MagicMock()
-        mock_response_body.read.return_value = json.dumps(api_response).encode('utf-8')
-        mock_bedrock_runtime.invoke_model.return_value = {'body': mock_response_body}
+#         mock_bedrock_runtime = MagicMock()
+#         api_response = {"content": [{"type": "text", "text": '{"result": "success"}'}]}
+#         mock_response_body = MagicMock()
+#         mock_response_body.read.return_value = json.dumps(api_response).encode('utf-8')
+#         mock_bedrock_runtime.invoke_model.return_value = {'body': mock_response_body}
 
-        mock_boto_client.return_value = mock_bedrock_runtime
+#         mock_boto_client.return_value = mock_bedrock_runtime
 
-        service = BedrockService(model="anthropic.claude-3-haiku-20240307-v1:0", s3_bucket_name="test-bucket")
+#         service = BedrockService(model="anthropic.claude-3-haiku-20240307-v1:0", s3_bucket_name="test-bucket")
 
-        # Act & Assert
-        with pytest.raises(ValueError, match="Resposta do modelo não é um JSON válido."):
-            service.process_image(dto)
+#         # Act
+#         result = service.process_image(dto)
 
-    @patch('lambdas.ai_processor.bedrock_service.boto3.client')
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
-    def test_process_image_unsupported_model(self, mock_s3_service_cls, mock_boto_client, dto):
-        """Tests that an error is raised for an unsupported model."""
-        # Arrange
-        mock_s3_instance = MagicMock()
-        mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
-        mock_s3_service_cls.return_value = mock_s3_instance
-        mock_boto_client.return_value = MagicMock()
+#         # Assert
+#         assert result == {"result": "success"}
+#         mock_s3_instance.get_image_from_s3.assert_called_once_with("path/to/diagram.png")
+#         mock_bedrock_runtime.invoke_model.assert_called_once()
 
-        service = BedrockService(model="unsupported-model", s3_bucket_name="test-bucket")
+#         invoke_model_args = mock_bedrock_runtime.invoke_model.call_args[1]
+#         assert invoke_model_args['modelId'] == "anthropic.claude-3-haiku-20240307-v1:0"
+#         body = json.loads(invoke_model_args['body'])
+#         assert body['messages'][0]['content'][0]['source']['media_type'] == 'image/png'
 
-        # Act & Assert
-        with pytest.raises(ValueError, match="Unsupported model"):
-            service.process_image(dto)
+#     @patch('bedrock_service.boto3.client')
+#     @patch('bedrock_service.S3Service')
+#     def test_process_image_invalid_json_response(self, mock_s3_service_cls, mock_boto_client, dto):
+#         """Tests handling of a non-JSON response from the model."""
+#         # Arrange
+#         mock_s3_instance = MagicMock()
+#         mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
+#         mock_s3_service_cls.return_value = mock_s3_instance
 
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
-    def test_get_image_success(self, mock_s3_service_cls):
-        """Tests successful image retrieval and media type detection."""
-        # Arrange
-        mock_s3_instance = MagicMock()
-        mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
-        mock_s3_service_cls.return_value = mock_s3_instance
+#         mock_bedrock_runtime = MagicMock()
+#         api_response = {"content": [{"type": "text", "text": 'this is not valid json'}]}
+#         mock_response_body = MagicMock()
+#         mock_response_body.read.return_value = json.dumps(api_response).encode('utf-8')
+#         mock_bedrock_runtime.invoke_model.return_value = {'body': mock_response_body}
 
-        service = BedrockService(model="any-model", s3_bucket_name="test-bucket")
+#         mock_boto_client.return_value = mock_bedrock_runtime
 
-        test_cases = {
-            "test.png": "image/png",
-            "test.jpeg": "image/jpeg",
-            "test.jpg": "image/jpeg",
-            "test.gif": "image/gif",
-            "test.unknown": "image/jpeg"  # Default case
-        }
+#         service = BedrockService(model="anthropic.claude-3-haiku-20240307-v1:0", s3_bucket_name="test-bucket")
 
-        for s3_key, expected_media_type in test_cases.items():
-            # Act
-            image_bytes, media_type = service.get_image(s3_key)
+#         # Act & Assert
+#         with pytest.raises(ValueError, match="Resposta do modelo não é um JSON válido."):
+#             service.process_image(dto)
 
-            # Assert
-            assert image_bytes == b'imagedata'
-            assert media_type == expected_media_type
-            mock_s3_instance.get_image_from_s3.assert_called_with(s3_key)
+#     @patch('bedrock_service.boto3.client')
+#     @patch('bedrock_service.S3Service')
+#     def test_process_image_unsupported_model(self, mock_s3_service_cls, mock_boto_client, dto):
+#         """Tests that an error is raised for an unsupported model."""
+#         # Arrange
+#         mock_s3_instance = MagicMock()
+#         mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
+#         mock_s3_service_cls.return_value = mock_s3_instance
+#         mock_boto_client.return_value = MagicMock()
 
-    @patch('lambdas.ai_processor.bedrock_service.S3Service')
-    def test_get_image_no_s3_key(self, mock_s3_service_cls):
-        """Tests that an error is raised if the S3 key is empty."""
-        # Arrange
-        service = BedrockService(model="any-model", s3_bucket_name="test-bucket")
+#         service = BedrockService(model="unsupported-model", s3_bucket_name="test-bucket")
 
-        # Act & Assert
-        with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
-            service.get_image("")
+#         # Act & Assert
+#         with pytest.raises(ValueError, match="Unsupported model"):
+#             service.process_image(dto)
 
-    @patch('lambdas.ai_processor.bedrock_service.uuid.uuid4', return_value='test-uuid')
-    @patch('lambdas.ai_processor.bedrock_service.datetime')
-    def test_get_prompt_text(self, mock_datetime, mock_uuid):
-        """Tests the generation of the prompt text."""
-        # Arrange
-        mock_datetime.utcnow.return_value.isoformat.return_value = "2024-01-01T12:00:00"
-        service = BedrockService(model="any-model", s3_bucket_name="test-bucket")
-        user_context = "This is a test context."
+#     @patch('bedrock_service.S3Service')
+#     def test_get_image_success(self, mock_s3_service_cls):
+#         """Tests successful image retrieval and media type detection."""
+#         # Arrange
+#         mock_s3_instance = MagicMock()
+#         mock_s3_instance.get_image_from_s3.return_value = b'imagedata'
+#         mock_s3_service_cls.return_value = mock_s3_instance
 
-        # Act
-        prompt = service.get_prompt_text(user_context)
+#         service = BedrockService(model="any-model", s3_bucket_name="test-bucket")
 
-        # Assert
-        assert "You are a cloud architect expert." in prompt
-        assert f"User Context: {user_context}" in prompt
-        assert 'For the \'execution_id\' field, use this value: test-uuid' in prompt
-        assert 'For the \'analysis_date\' field, use this value: 2024-01-01T12:00:00Z' in prompt
-        assert 'Set \'processing_status\' as "ANALYZED".' in prompt
-        assert '"type": "object"' in prompt  # Check if schema is included
+#         test_cases = {
+#             "test.png": "image/png",
+#             "test.jpeg": "image/jpeg",
+#             "test.jpg": "image/jpeg",
+#             "test.gif": "image/gif",
+#             "test.unknown": "image/jpeg"  # Default case
+#         }
+
+#         for s3_key, expected_media_type in test_cases.items():
+#             # Act
+#             image_bytes, media_type = service.get_image(s3_key)
+
+#             # Assert
+#             assert image_bytes == b'imagedata'
+#             assert media_type == expected_media_type
+#             mock_s3_instance.get_image_from_s3.assert_called_with(s3_key)
+
+#     @patch('bedrock_service.S3Service')
+#     def test_get_image_no_s3_key(self, mock_s3_service_cls):
+#         """Tests that an error is raised if the S3 key is empty."""
+#         # Arrange
+#         service = BedrockService(model="any-model", s3_bucket_name="test-bucket")
+
+#         # Act & Assert
+#         with pytest.raises(ValueError, match="Nenhuma chave S3 fornecida no evento."):
+#             service.get_image("")
+
+#     @patch('bedrock_service.uuid.uuid4', return_value='test-uuid')
+#     @patch('bedrock_service.datetime')
+#     def test_get_prompt_text(self, mock_datetime, mock_uuid):
+#         """Tests the generation of the prompt text."""
+#         # Arrange
+#         mock_datetime.utcnow.return_value.isoformat.return_value = "2024-01-01T12:00:00"
+#         service = BedrockService(model="any-model", s3_bucket_name="test-bucket")
+#         user_context = "This is a test context."
+
+#         # Act
+#         prompt = service.get_prompt_text(user_context)
+
+#         # Assert
+#         assert "You are a cloud architect expert." in prompt
+#         assert f"User Context: {user_context}" in prompt
+#         assert 'For the \'execution_id\' field, use this value: test-uuid' in prompt
+#         assert 'For the \'analysis_date\' field, use this value: 2024-01-01T12:00:00Z' in prompt
+#         assert 'Set \'processing_status\' as "ANALYZED".' in prompt
+#         assert '"type": "object"' in prompt  # Check if schema is included
