@@ -27,3 +27,15 @@ variable "bedrock_model_id" {
   description = "The ID of the Bedrock model that the Lambda function is allowed to invoke."
   type        = string
 }
+
+variable "lambda_arns_for_sfn" {
+  description = "A list of Lambda function ARNs that the Step Functions state machine can invoke."
+  type        = list(string)
+  default     = []
+}
+
+variable "lambda_arns_for_sfn" {
+  description = "A list of Lambda function ARNs that the Step Functions state machine can invoke."
+  type        = list(string)
+  default     = []
+}
