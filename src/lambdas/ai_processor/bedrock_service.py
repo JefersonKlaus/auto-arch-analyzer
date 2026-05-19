@@ -3,6 +3,7 @@ import boto3
 import base64
 import logging
 import uuid
+from urllib.parse import urlparse
 from datetime import datetime
 from s3_service import S3Service
 from typing import Any, Dict, Optional
@@ -189,16 +190,23 @@ class BedrockService:
             self.logger.error(f"Erro durante a chamada da API Bedrock: {e}")
             raise
 
-    def get_image(self, s3_key: str):
+    def get_image(self, s3_uri: str):
         """
         Recupera os bytes da imagem e o tipo de mídia (mime_type) de um caminho S3.
         Retorna uma tupla (image_bytes, media_type) ou levanta uma exceção em caso de erro.
         """
-        if not s3_key:
-            raise ValueError("Nenhuma chave S3 fornecida no evento.")
+        if not s3_uri:
+            raise ValueError("Nenhuma URI S3 fornecida no evento.")
 
         try:
-            self.logger.info(f"Recuperando imagem do S3: {s3_key}")
+            parsed_uri = urlparse(s3_uri)
+            if parsed_uri.scheme != "s3" or not parsed_uri.netloc or not parsed_uri.path.lstrip('/'):
+                raise ValueError(f"Formato de URI S3 inválido: {s3_uri}. Esperado 's3://bucket/key'.")
+
+            # A chave do objeto é o caminho, sem a barra inicial.
+            s3_key = parsed_uri.path.lstrip("/")
+
+            self.logger.info(f"Recuperando imagem do S3 com a chave: '{s3_key}' (da URI: '{s3_uri}')")
             image_bytes = self.s3_service.get_image_from_s3(s3_key)
 
             s3_key_lower = s3_key.lower()
@@ -211,7 +219,7 @@ class BedrockService:
             else:
                 media_type = "image/jpeg"  # Default
                 self.logger.warning(
-                    f"Tipo de mídia não reconhecido para S3 key: {s3_key}. Usando default: {media_type}"
+                    f"Tipo de mídia não reconhecido para S3 URI: {s3_uri}. Usando default: {media_type}"
                 )
 
             return image_bytes, media_type
