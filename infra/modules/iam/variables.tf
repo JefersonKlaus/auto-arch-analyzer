@@ -22,3 +22,8 @@ variable "dynamodb_table_arn" {
   description = "ARN of the DynamoDB table used by Lambda"
   type        = string
 }
+
+variable "bedrock_model_id" {
+  description = "The ID of the Bedrock model that the Lambda function is allowed to invoke."
+  type        = string
+}

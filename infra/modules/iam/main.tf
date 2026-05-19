@@ -68,7 +68,26 @@ resource "aws_iam_role_policy" "lambda_bedrock" {
       Sid      = "BedrockInvokeModel"
       Effect   = "Allow"
       Action   = ["bedrock:InvokeModel"]
-      Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/*"
+      Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_model_id}"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_marketplace" {
+  name = "${var.project_name}-marketplace-policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "MarketplaceSubscribe"
+      Effect = "Allow"
+      Action = [
+        "aws-marketplace:ViewSubscriptions",
+        "aws-marketplace:Subscribe"
+      ]
+      # These actions are not resource-specific in the same way as others
+      Resource = "*"
     }]
   })
 }
