@@ -33,9 +33,3 @@ variable "lambda_arns_for_sfn" {
   type        = list(string)
   default     = []
 }
-
-variable "lambda_arns_for_sfn" {
-  description = "A list of Lambda function ARNs that the Step Functions state machine can invoke."
-  type        = list(string)
-  default     = []
-}
