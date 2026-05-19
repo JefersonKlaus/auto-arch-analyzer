@@ -43,6 +43,13 @@ module "iam" {
     module.s3.freeze_bucket_arn,
   ]
   dynamodb_table_arn = module.dynamodb.table_arn
+  bedrock_model_id   = var.bedrock_model_id
+  lambda_arns_for_sfn = [
+    module.lambda.file_validator_function_arn,
+    module.lambda.ai_processor_function_arn,
+    module.lambda.report_adapter_function_arn,
+    module.lambda.error_logger_function_arn
+  ]
 }
 
 module "layers" {
