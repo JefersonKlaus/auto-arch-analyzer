@@ -12,7 +12,19 @@ from botocore.config import Config
 
 
 class BedrockService:
+    """
+    A service to interact with Amazon Bedrock for AI model inference.
+    It handles model invocation, image retrieval from S3, and prompt engineering.
+    """
+
     def __init__(self, model: str, s3_bucket_name: str):
+        """
+        Initializes the BedrockService.
+
+        Args:
+            model (str): The ID of the Bedrock model to use for inference.
+            s3_bucket_name (str): The name of the S3 bucket for image storage.
+        """
         self.region = "us-east-1"
         retry_config = Config(
             region_name=self.region, retries={"max_attempts": 5, "mode": "adaptive"}
@@ -22,18 +34,16 @@ class BedrockService:
         )
         self.bedrock_management_client = boto3.client("bedrock", config=retry_config)
 
-        # List of known-good, active Claude 3 models to prevent using legacy versions.
         active_claude_3_models = [
             "anthropic.claude-3-sonnet-20240229-v1:0",
             "anthropic.claude-3-haiku-20240307-v1:0",
             "anthropic.claude-3-opus-20240229-v1:0",
+            "anthropic.claude-3-5-sonnet-20240620-v1:0",
         ]
 
-        # If a Claude 3 model is specified but it's not a known active one, it might be a legacy/preview version.
-        # Default to a stable one (Sonnet) to prevent runtime errors from deprecated model IDs.
         if model.startswith("anthropic.claude-3") and model not in active_claude_3_models:
-            logging.warning(f"Model ID '{model}' is not a known active Claude 3 model. Overriding with Sonnet.")
-            self.model = "anthropic.claude-3-sonnet-20240229-v1:0"
+            logging.warning(f"Model ID '{model}' is not a known active Claude 3 model. Overriding with Claude 3.5 Sonnet.")
+            self.model = "anthropic.claude-3-5-sonnet-20240620-v1:0"
         else:
             self.model = model
 
@@ -193,7 +203,6 @@ class BedrockService:
 
             bedrock_response_text = response_body["content"][0]["text"]
             try:
-                # A resposta do modelo deve ser um JSON, então fazemos o parse e retornamos o dicionário
                 return json.loads(bedrock_response_text)
             except json.JSONDecodeError:
                 self.logger.error(
@@ -218,7 +227,6 @@ class BedrockService:
             if parsed_uri.scheme != "s3" or not parsed_uri.netloc or not parsed_uri.path.lstrip('/'):
                 raise ValueError(f"Formato de URI S3 inválido: {s3_uri}. Esperado 's3://bucket/key'.")
 
-            # A chave do objeto é o caminho, sem a barra inicial.
             s3_key = parsed_uri.path.lstrip("/")
 
             self.logger.info(f"Recuperando imagem do S3 com a chave: '{s3_key}' (da URI: '{s3_uri}')")
@@ -232,7 +240,7 @@ class BedrockService:
             elif s3_key_lower.endswith((".jpeg", ".jpg")):
                 media_type = "image/jpeg"
             else:
-                media_type = "image/jpeg"  # Default
+                media_type = "image/jpeg"
                 self.logger.warning(
                     f"Tipo de mídia não reconhecido para S3 URI: {s3_uri}. Usando default: {media_type}"
                 )
