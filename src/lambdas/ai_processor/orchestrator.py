@@ -22,13 +22,12 @@ class AIProcessorOrchestrator:
     ):
         """
         Initialize orchestrator dependencies.
-
         Args:
             s3_bucket_name: The name of the S3 bucket where diagrams are stored.
             bedrock_service: Optional injected service for testing.
         """
         self.bedrock_service = bedrock_service or BedrockService(
-            model="anthropic.claude-3-sonnet-20240229-v1:0",
+            model="anthropic.claude-3-5-sonnet-20240620-v1:0",
             s3_bucket_name=s3_bucket_name,
         )
 
