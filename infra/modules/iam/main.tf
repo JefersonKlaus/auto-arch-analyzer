@@ -3,14 +3,16 @@ resource "aws_iam_role" "lambda_role" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid    = "LambdaAssumeRole"
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "lambda.amazonaws.com"
+    Statement = [
+      {
+        Sid    = "LambdaAssumeRole"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
       }
-    }]
+    ]
   })
 }
 
@@ -64,15 +66,16 @@ resource "aws_iam_role_policy" "lambda_bedrock" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid      = "BedrockInvokeModel"
-      Effect   = "Allow"
-      Action   = ["bedrock:InvokeModel"]
-      Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_model_id}"
-      # Granting access to all Claude 3 models for flexibility.
-      # This avoids access errors if the model ID in the code changes between Haiku, Sonnet, etc.
-      Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/anthropic.claude-3-*"
-    }]
+    Statement = [
+      {
+        Sid    = "BedrockInvokeModel"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
+        # Granting access to all Claude 3 models for flexibility.
+        # This avoids access errors if the model ID in the code changes between Haiku, Sonnet, etc.
+        Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/anthropic.claude-3-*"
+      }
+    ]
   })
 }
 
@@ -82,12 +85,14 @@ resource "aws_iam_role_policy" "sfn_lambda_invoke" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid      = "AllowLambdaInvocation"
-      Effect   = "Allow"
-      Action   = "lambda:InvokeFunction"
-      Resource = var.lambda_arns_for_sfn
-    }]
+    Statement = [
+      {
+        Sid      = "AllowLambdaInvocation"
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
+        Resource = var.lambda_arns_for_sfn
+      }
+    ]
   })
 }
 
@@ -97,16 +102,18 @@ resource "aws_iam_role_policy" "lambda_marketplace" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid    = "MarketplaceSubscribe"
-      Effect = "Allow"
-      Action = [
-        "aws-marketplace:ViewSubscriptions",
-        "aws-marketplace:Subscribe"
-      ]
-      # These actions are not resource-specific in the same way as others
-      Resource = "*"
-    }]
+    Statement = [
+      {
+        Sid    = "MarketplaceSubscribe"
+        Effect = "Allow"
+        Action = [
+          "aws-marketplace:ViewSubscriptions",
+          "aws-marketplace:Subscribe"
+        ]
+        # These actions are not resource-specific in the same way as others
+        Resource = "*"
+      }
+    ]
   })
 }
 
@@ -116,12 +123,14 @@ resource "aws_iam_role_policy" "lambda_step_functions" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid      = "StartWorkflowExecution"
-      Effect   = "Allow"
-      Action   = ["states:StartExecution"]
-      Resource = var.stepfunction_state_machine_arn
-    }]
+    Statement = [
+      {
+        Sid      = "StartWorkflowExecution"
+        Effect   = "Allow"
+        Action   = ["states:StartExecution"]
+        Resource = var.stepfunction_state_machine_arn
+      }
+    ]
   })
 }
 
@@ -165,13 +174,15 @@ resource "aws_iam_role" "sfn_role" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid    = "StepFunctionsAssumeRole"
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "states.amazonaws.com"
+    Statement = [
+      {
+        Sid    = "StepFunctionsAssumeRole"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "states.amazonaws.com"
+        }
       }
-    }]
+    ]
   })
 }
