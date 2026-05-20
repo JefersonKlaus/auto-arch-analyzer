@@ -21,7 +21,22 @@ class BedrockService:
             "bedrock-runtime", config=retry_config
         )
         self.bedrock_management_client = boto3.client("bedrock", config=retry_config)
-        self.model = model
+
+        # List of known-good, active Claude 3 models to prevent using legacy versions.
+        active_claude_3_models = [
+            "anthropic.claude-3-sonnet-20240229-v1:0",
+            "anthropic.claude-3-haiku-20240307-v1:0",
+            "anthropic.claude-3-opus-20240229-v1:0",
+        ]
+
+        # If a Claude 3 model is specified but it's not a known active one, it might be a legacy/preview version.
+        # Default to a stable one (Sonnet) to prevent runtime errors from deprecated model IDs.
+        if model.startswith("anthropic.claude-3") and model not in active_claude_3_models:
+            logging.warning(f"Model ID '{model}' is not a known active Claude 3 model. Overriding with Sonnet.")
+            self.model = "anthropic.claude-3-sonnet-20240229-v1:0"
+        else:
+            self.model = model
+
         self.s3_service = S3Service(bucket_name=s3_bucket_name)
         self.logger = logging.getLogger(__name__)
         self.logger.info(f"BedrockClient initialized with model: {self.model}")
