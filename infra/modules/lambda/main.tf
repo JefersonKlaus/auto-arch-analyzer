@@ -101,6 +101,26 @@ module "report_adapter" {
   }
 }
 
+module "pdf_mail_consumer" {
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/pdf_mail_consumer"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "pdf-mail-consumer"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
+
+  environment_variables = {
+    ENVIRONMENT         = var.environment
+    PROJECT_NAME        = var.project_name
+    DYNAMODB_TABLE_NAME = var.dynamodb_table_name
+  }
+}
+
 module "error_logger" {
   source = "./dynamic_lambda"
 
@@ -123,6 +143,13 @@ module "error_logger" {
 resource "aws_lambda_event_source_mapping" "init_step_function_sqs_trigger" {
   event_source_arn = var.sqs_ingestion_queue_arn
   function_name    = module.init_step_function.lambda_function_name
+  batch_size       = 10
+  enabled          = true
+}
+
+resource "aws_lambda_event_source_mapping" "pdf_mail_consumer_sqs_trigger" {
+  event_source_arn = var.sqs_pdf_mail_queue_arn
+  function_name    = module.pdf_mail_consumer.lambda_function_name
   batch_size       = 10
   enabled          = true
 }
