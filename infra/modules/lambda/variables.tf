@@ -48,3 +48,8 @@ variable "sqs_pdf_mail_queue_url" {
   description = "SQS URL for the PDF/Mail queue"
   type        = string
 }
+
+variable "sqs_pdf_mail_queue_arn" {
+  description = "SQS ARN for the PDF/Mail queue"
+  type        = string
+}

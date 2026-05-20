@@ -79,6 +79,7 @@ A arquitetura inclui componentes de rede, computação, armazenamento, funções
 
 ### Funções Lambda
 - **analyze-arch**: Handler do POST /analyze (30s timeout)
+- **pdf-mail-consumer**: Consome a fila PDF/Mail e registra o processamento para geração de PDF/envio de e-mail
 
 ### Variáveis de Ambiente para Execução Local
 

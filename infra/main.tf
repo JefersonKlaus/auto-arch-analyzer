@@ -66,6 +66,7 @@ module "lambda" {
   common_layer_arn               = module.layers.common_layer_arn
   dynamodb_table_name            = module.dynamodb.table_name
   sqs_pdf_mail_queue_url         = module.queue.pdf_mail_queue_url
+  sqs_pdf_mail_queue_arn         = module.queue.pdf_mail_queue_arn
 }
 
 module "queue" {
