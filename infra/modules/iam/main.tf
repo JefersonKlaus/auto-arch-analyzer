@@ -87,9 +87,9 @@ resource "aws_iam_role_policy" "sfn_lambda_invoke" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowLambdaInvocation"
-        Effect = "Allow"
-        Action = "lambda:InvokeFunction"
+        Sid      = "AllowLambdaInvocation"
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
         Resource = var.lambda_arns_for_sfn
       }
     ]
@@ -125,9 +125,9 @@ resource "aws_iam_role_policy" "lambda_step_functions" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "StartWorkflowExecution"
-        Effect = "Allow"
-        Action = ["states:StartExecution"]
+        Sid      = "StartWorkflowExecution"
+        Effect   = "Allow"
+        Action   = ["states:StartExecution"]
         Resource = var.stepfunction_state_machine_arn
       }
     ]
