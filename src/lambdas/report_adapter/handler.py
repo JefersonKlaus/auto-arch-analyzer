@@ -17,15 +17,24 @@ def lambda_handler(event, context):
 
     Expected input:
     {
+        "execution_id": "123e4567-e89b-12d3-a456-426614174000",
         "email": "user@example.com",
         "prompt": "Análise de custo",
         "s3_file_path": "s3://bucket/inputs/uuid.bin",
-        "ai_analysis": {
-            "findings": [...],
-            "criticality": "High",
-            "recommendations": "..."
+        "technical_analysis": {
+            "architecture_summary": {...},
+            "service_inventory": [...],
+            "architecture_findings": [...]
         }
     }
+
+    Persistence model in DynamoDB:
+    - PK: execution_id
+    - SK: REPORT
+    - email: email
+    - prompt: prompt
+    - image: s3_file_path
+    - result: remaining payload fields
 
     Returns:
     {
