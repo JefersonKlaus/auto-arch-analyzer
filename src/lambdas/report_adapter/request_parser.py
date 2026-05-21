@@ -28,8 +28,9 @@ class RequestParser:
         payload = event if isinstance(event, dict) else {}
 
         return ReportAdapterRequest(
+            execution_id=payload.get("execution_id"),
             email=payload.get("email"),
             s3_file_path=payload.get("s3_file_path"),
-            ai_analysis=payload.get("ai_analysis") or {},
             prompt=payload.get("prompt"),
+            raw_payload=payload,
         )

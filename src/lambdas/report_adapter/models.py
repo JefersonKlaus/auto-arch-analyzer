@@ -11,13 +11,18 @@ from typing import Any, Dict, List, Optional
 class ReportAdapterRequest:
     """Represents a validated report adapter request from Step Functions."""
 
+    execution_id: str
     email: str
     s3_file_path: str
-    ai_analysis: Dict[str, Any]
     prompt: Optional[str] = None
+    raw_payload: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Validate required fields."""
+        if not self.execution_id:
+            raise ValueError("execution_id field is required")
+        if not isinstance(self.execution_id, str) or not self.execution_id.strip():
+            raise ValueError("execution_id must be a non-empty string")
         if not self.email:
             raise ValueError("email field is required")
         if not isinstance(self.email, str) or not self.email.strip():
@@ -26,8 +31,10 @@ class ReportAdapterRequest:
             raise ValueError("s3_file_path field is required")
         if not isinstance(self.s3_file_path, str) or not self.s3_file_path.strip():
             raise ValueError("s3_file_path must be a non-empty string")
-        if self.ai_analysis is None:
-            self.ai_analysis = {}
+        if self.raw_payload is None:
+            self.raw_payload = {}
+        if not isinstance(self.raw_payload, dict):
+            raise ValueError("raw_payload must be a dictionary")
 
 
 @dataclass

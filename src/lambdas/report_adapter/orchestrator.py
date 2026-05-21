@@ -3,7 +3,6 @@ Orchestration layer for the report_adapter Lambda.
 Single Responsibility: Coordinate the DynamoDB persistence and SQS notification workflow.
 """
 
-import uuid
 from typing import Any, Dict
 
 from dynamodb_repository import DynamoDBRepository
@@ -47,12 +46,16 @@ class ReportAdapterOrchestrator:
         """
         request: ReportAdapterRequest = RequestParser.parse_event(event)
 
-        item_id = str(uuid.uuid4())
-        self.repository.save_report(request, item_id)
+        item_id = self.repository.save_report(request)
 
         sqs_message_id = self.publisher.publish_report_notification(
             item_id=item_id,
             email=request.email,
+        )
+
+        self.repository.update_sqs_message_id(
+            execution_id=item_id,
+            sqs_message_id=sqs_message_id,
         )
 
         return ReportAdapterResult(

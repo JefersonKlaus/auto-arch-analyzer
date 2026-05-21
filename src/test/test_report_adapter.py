@@ -19,33 +19,46 @@ from lambdas.report_adapter import handler as handler_module
 class TestReportAdapterRequest:
     def test_valid_request(self):
         req = ReportAdapterRequest(
+            execution_id="123e4567-e89b-12d3-a456-426614174000",
             email="user@example.com",
             s3_file_path="s3://bucket/key",
-            ai_analysis={"findings": []},
             prompt="Please analyze",
+            raw_payload={"technical_analysis": {"findings": []}},
         )
 
+        assert req.execution_id == "123e4567-e89b-12d3-a456-426614174000"
         assert req.email == "user@example.com"
         assert req.s3_file_path == "s3://bucket/key"
-        assert req.ai_analysis == {"findings": []}
 
     def test_missing_email_raises(self):
         with pytest.raises(ValueError, match="email field is required"):
-            ReportAdapterRequest(email=None, s3_file_path="s3://x", ai_analysis={})
+            ReportAdapterRequest(
+                execution_id="id",
+                email=None,
+                s3_file_path="s3://x",
+                raw_payload={},
+            )
 
     def test_missing_s3_path_raises(self):
         with pytest.raises(ValueError, match="s3_file_path field is required"):
-            ReportAdapterRequest(email="a@b.com", s3_file_path=None, ai_analysis={})
+            ReportAdapterRequest(
+                execution_id="id",
+                email="a@b.com",
+                s3_file_path=None,
+                raw_payload={},
+            )
 
 
 class TestRequestParser:
     def test_parse_direct_event(self):
         event = {
+            "execution_id": "123e4567-e89b-12d3-a456-426614174000",
             "email": "u@e.com",
             "s3_file_path": "s3://bucket/file",
-            "ai_analysis": {"findings": []},
+            "technical_analysis": {"findings": []},
         }
         req = RequestParser.parse_event(event)
+        assert req.execution_id == "123e4567-e89b-12d3-a456-426614174000"
         assert req.email == "u@e.com"
         assert req.s3_file_path == "s3://bucket/file"
 
@@ -65,14 +78,31 @@ class TestDynamoDBRepository:
         repo = DynamoDBRepository("test-table")
 
         class DummyReq:
+            execution_id = "123e4567-e89b-12d3-a456-426614174000"
             email = "u@e.com"
             prompt = "p"
             s3_file_path = "s3://b/k"
-            ai_analysis = {"a": 1}
+            raw_payload = {
+                "execution_id": "123e4567-e89b-12d3-a456-426614174000",
+                "email": "u@e.com",
+                "prompt": "p",
+                "s3_file_path": "s3://b/k",
+                "technical_analysis": {"a": 1},
+            }
 
-        item_id = repo.save_report(DummyReq(), "item-1")
-        assert item_id == "item-1"
-        mock_table.put_item.assert_called_once()
+        item_id = repo.save_report(DummyReq())
+        assert item_id == "123e4567-e89b-12d3-a456-426614174000"
+        mock_table.put_item.assert_called_once_with(
+            Item={
+                "PK": "123e4567-e89b-12d3-a456-426614174000",
+                "SK": "REPORT",
+                "execution_id": "123e4567-e89b-12d3-a456-426614174000",
+                "email": "u@e.com",
+                "prompt": "p",
+                "image": "s3://b/k",
+                "result": {"technical_analysis": {"a": 1}},
+            }
+        )
 
     @patch("lambdas.report_adapter.dynamodb_repository.boto3.resource")
     def test_save_report_failure_raises(self, mock_boto3_resource):
@@ -87,13 +117,48 @@ class TestDynamoDBRepository:
         repo = DynamoDBRepository("t")
 
         class DummyReq:
+            execution_id = "id"
             email = "u@e.com"
             prompt = "p"
             s3_file_path = "s3://b/k"
-            ai_analysis = {}
+            raw_payload = {}
 
         with pytest.raises(RuntimeError, match="Failed to persist item to DynamoDB"):
-            repo.save_report(DummyReq(), "id")
+            repo.save_report(DummyReq())
+
+    @patch("lambdas.report_adapter.dynamodb_repository.boto3.resource")
+    def test_update_sqs_message_id_success(self, mock_boto3_resource):
+        mock_table = MagicMock()
+        mock_table.update_item.return_value = {}
+        mock_boto3_resource.return_value.Table.return_value = mock_table
+
+        repo = DynamoDBRepository("test-table")
+
+        repo.update_sqs_message_id(
+            execution_id="123e4567-e89b-12d3-a456-426614174000",
+            sqs_message_id="msg-1",
+        )
+
+        mock_table.update_item.assert_called_once_with(
+            Key={"PK": "123e4567-e89b-12d3-a456-426614174000", "SK": "REPORT"},
+            UpdateExpression="SET sqs_message_id = :sqs_message_id",
+            ExpressionAttributeValues={":sqs_message_id": "msg-1"},
+        )
+
+    @patch("lambdas.report_adapter.dynamodb_repository.boto3.resource")
+    def test_update_sqs_message_id_failure_raises(self, mock_boto3_resource):
+        from botocore.exceptions import ClientError
+
+        mock_table = MagicMock()
+        mock_table.update_item.side_effect = ClientError(
+            {"Error": {"Message": "err", "Code": "500"}}, "UpdateItem"
+        )
+        mock_boto3_resource.return_value.Table.return_value = mock_table
+
+        repo = DynamoDBRepository("test-table")
+
+        with pytest.raises(RuntimeError, match="Failed to update SQS message id in DynamoDB"):
+            repo.update_sqs_message_id("id", "msg-1")
 
 
 class TestSQSPublisher:
@@ -132,9 +197,10 @@ class TestReportAdapterOrchestrator:
         orchestrator = ReportAdapterOrchestrator(repository=repo, publisher=publisher)
 
         event = {
+            "execution_id": "123e4567-e89b-12d3-a456-426614174000",
             "email": "u@e.com",
             "s3_file_path": "s3://b/k",
-            "ai_analysis": {"findings": []},
+            "technical_analysis": {"findings": []},
         }
 
         result = orchestrator.process(event)
@@ -143,6 +209,10 @@ class TestReportAdapterOrchestrator:
         assert result.db_item_id
         assert result.sqs_message_id == "msg-1"
         repo.save_report.assert_called_once()
+        repo.update_sqs_message_id.assert_called_once_with(
+            execution_id=repo.save_report.return_value,
+            sqs_message_id="msg-1",
+        )
         publisher.publish_report_notification.assert_called_once()
 
 

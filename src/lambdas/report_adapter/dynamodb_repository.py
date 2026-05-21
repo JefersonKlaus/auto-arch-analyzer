@@ -3,7 +3,7 @@ DynamoDB persistence for the report_adapter Lambda.
 Single Responsibility: Handle all DynamoDB storage operations.
 """
 
-from datetime import datetime, timezone
+from copy import deepcopy
 from typing import Any, Dict
 
 import boto3
@@ -25,33 +25,31 @@ class DynamoDBRepository:
         """
         self.table = boto3.resource("dynamodb", region_name=region).Table(table_name)
 
-    def save_report(self, request: ReportAdapterRequest, item_id: str) -> str:
+    def save_report(self, request: ReportAdapterRequest) -> str:
         """
-        Persist a report item to DynamoDB using the single-table design.
+        Persist a report item to DynamoDB using a single-table item shape.
 
         Args:
             request: Validated report adapter request
-            item_id: Unique identifier for this report item
 
         Returns:
-            The item_id that was persisted
+            The execution_id that was persisted
 
         Raises:
             RuntimeError: If the DynamoDB put_item operation fails
         """
-        timestamp = datetime.now(timezone.utc).isoformat()
+        result = deepcopy(request.raw_payload)
+        for field_name in ("execution_id", "email", "prompt", "s3_file_path"):
+            result.pop(field_name, None)
+
         item = {
-            "PK": f"REPORT#{request.email}",
-            "SK": f"ANALYSIS#{item_id}",
-            "GSI1PK": "STATUS#PENDING",
-            "GSI1SK": timestamp,
-            "id": item_id,
+            "PK": request.execution_id,
+            "SK": "REPORT",
+            "execution_id": request.execution_id,
             "email": request.email,
             "prompt": request.prompt or "",
-            "s3_file_path": request.s3_file_path,
-            "ai_analysis": request.ai_analysis,
-            "status": "PENDING",
-            "created_at": timestamp,
+            "image": request.s3_file_path,
+            "result": result,
         }
 
         try:
@@ -59,4 +57,26 @@ class DynamoDBRepository:
         except ClientError as exc:
             raise RuntimeError(f"Failed to persist item to DynamoDB: {exc}") from exc
 
-        return item_id
+        return request.execution_id
+
+    def update_sqs_message_id(self, execution_id: str, sqs_message_id: str) -> None:
+        """
+        Update an existing report item with the SQS message identifier.
+
+        Args:
+            execution_id: Primary key of the report item
+            sqs_message_id: Message identifier returned by SQS
+
+        Raises:
+            RuntimeError: If the DynamoDB update_item operation fails
+        """
+        try:
+            self.table.update_item(
+                Key={"PK": execution_id, "SK": "REPORT"},
+                UpdateExpression="SET sqs_message_id = :sqs_message_id",
+                ExpressionAttributeValues={
+                    ":sqs_message_id": sqs_message_id,
+                },
+            )
+        except ClientError as exc:
+            raise RuntimeError(f"Failed to update SQS message id in DynamoDB: {exc}") from exc
