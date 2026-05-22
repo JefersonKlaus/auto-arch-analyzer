@@ -2,6 +2,7 @@
 Unit tests for the PDF/Mail SQS consumer Lambda.
 """
 
+import base64
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +10,11 @@ import pytest
 from lambdas.pdf_mail_consumer.handler import lambda_handler
 from lambdas.pdf_mail_consumer.orchestrator import PdfMailConsumerOrchestrator
 from lambdas.pdf_mail_consumer.report_renderer import build_html_report, build_pdf_report
+
+
+PNG_BYTES = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5Y7f8AAAAASUVORK5CYII="
+)
 
 
 @patch("lambdas.pdf_mail_consumer.handler.PdfMailConsumerOrchestrator")
@@ -50,7 +56,12 @@ def test_lambda_handler_without_records_returns_summary(caplog):
     assert "pdf-mail-consumer invoked without SQS records" in caplog.text
 
 
-def test_build_html_report_includes_download_link():
+@patch("lambdas.pdf_mail_consumer.report_renderer.boto3.client")
+def test_build_html_report_includes_download_link(mock_s3_client_factory):
+    mock_s3_client = MagicMock()
+    mock_s3_client.generate_presigned_url.return_value = "https://image-signed-url"
+    mock_s3_client_factory.return_value = mock_s3_client
+
     report = {
         "PK": {"S": "123e4567-e89b-12d3-a456-426614174000"},
         "SK": {"S": "REPORT"},
@@ -127,13 +138,17 @@ def test_build_html_report_includes_download_link():
     assert "voce@exemplo.com" in html
     assert "Analise a arquitetura" in html
     assert "s3://auto-arch-analyzer-diagram-upload-dev/voce/e7c255a9-diagram.png" in html
-    assert "Execution ID" not in html
-    assert "technical_analysis" not in html
+    assert "https://image-signed-url" in html
+    assert "Analysis Date" not in html
+    assert "Processing Status" not in html
+    assert "S3 Bucket" not in html
+    assert "S3 Key" not in html
     assert "Technical Analysis" in html
     assert "Architecture Findings" in html
     assert "High" in html
     assert "Amazon API Gateway" in html
     assert "Serverless" in html
+    assert "<img src=\"https://image-signed-url\"" in html
     assert "<pre>" not in html
 
 
@@ -149,9 +164,23 @@ def test_build_pdf_report_returns_pdf_bytes():
     pdf_bytes = build_pdf_report(report)
 
     assert pdf_bytes.startswith(b"%PDF-")
+    pdf_text = pdf_bytes.decode("latin-1")
+    # PDF must contain only the Technical Analysis content
+    assert "Technical Analysis" in pdf_text
+    assert "ok" in pdf_text
+    # removed metadata fields
+    assert "Email" not in pdf_text
+    assert "Prompt" not in pdf_text
+    assert "s3://bucket/input.png" not in pdf_text
 
 
-def test_orchestrator_process_records_sends_report():
+@patch("lambdas.pdf_mail_consumer.report_renderer.boto3.client")
+def test_orchestrator_process_records_sends_report(mock_s3_client_factory):
+    mock_s3_client = MagicMock()
+    mock_s3_client.generate_presigned_url.return_value = "https://image-signed-url"
+    mock_s3_client.get_object.return_value = {"Body": MagicMock(read=MagicMock(return_value=PNG_BYTES))}
+    mock_s3_client_factory.return_value = mock_s3_client
+
     repository = MagicMock()
     repository.get_report.return_value = {
         "execution_id": "exec-1",
@@ -187,7 +216,9 @@ def test_orchestrator_process_records_sends_report():
 
     result = orchestrator.process_records(event)
 
-    assert result == {"status": "SUCCESS", "processed_records": 1}
+    assert result.get("status") == "SUCCESS"
+    assert result.get("processed_records") == 1
+    assert "user@example.com" in result.get("recipients", [])
     repository.get_report.assert_called_once_with("exec-1")
     storage.upload_pdf.assert_called_once()
     storage.create_download_url.assert_called_once_with("reports/exec-1/analysis-report.pdf")

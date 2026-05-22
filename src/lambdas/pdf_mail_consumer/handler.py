@@ -25,7 +25,17 @@ def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
     try:
         orchestrator = PdfMailConsumerOrchestrator()
         result = orchestrator.process_records(records)
-        logger.info("pdf-mail-consumer finished", extra={"processed_records": result.get("processed_records")})
+        processed = result.get("processed_records")
+        recipients = result.get("recipients") or []
+        success = result.get("status") == "SUCCESS"
+        logger.info(
+            "pdf-mail-consumer finished",
+            extra={
+                "processed_records": processed,
+                "recipients": recipients,
+                "success": success,
+            },
+        )
         return result
 
     except Exception:
