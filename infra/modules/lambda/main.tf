@@ -118,8 +118,8 @@ module "pdf_mail_consumer" {
     ENVIRONMENT             = var.environment
     PROJECT_NAME            = var.project_name
     DYNAMODB_TABLE_NAME     = var.dynamodb_table_name
-    REPORTS_PDF_BUCKET_NAME  = var.reports_pdf_bucket_name
-    SES_FROM_EMAIL           = var.ses_from_email
+    REPORTS_PDF_BUCKET_NAME = var.reports_pdf_bucket_name
+    SES_FROM_EMAIL          = var.ses_from_email
   }
 }
 

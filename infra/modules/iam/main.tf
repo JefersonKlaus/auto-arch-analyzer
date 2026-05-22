@@ -177,9 +177,9 @@ resource "aws_iam_role_policy" "lambda_ses" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "SESSendEmail"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "SESSendEmail"
+        Effect = "Allow"
+        Action = [
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
