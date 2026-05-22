@@ -3,7 +3,6 @@
 from decimal import Decimal
 from html import escape
 import json
-import textwrap
 from typing import Any, Dict, List, Sequence
 
 
@@ -19,29 +18,131 @@ def _format_json(payload: Any) -> str:
     return json.dumps(payload, indent=2, ensure_ascii=False, default=_json_default)
 
 
+def _normalize_dynamodb_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        if len(value) == 1:
+            key = next(iter(value))
+            nested_value = value[key]
+
+            if key == "S":
+                return nested_value
+            if key == "N":
+                return Decimal(nested_value)
+            if key == "BOOL":
+                return bool(nested_value)
+            if key == "NULL":
+                return None
+            if key == "M":
+                return {
+                    nested_key: _normalize_dynamodb_value(nested_item)
+                    for nested_key, nested_item in nested_value.items()
+                }
+            if key == "L":
+                return [_normalize_dynamodb_value(item) for item in nested_value]
+            if key == "SS":
+                return list(nested_value)
+            if key == "NS":
+                return [Decimal(item) for item in nested_value]
+            if key == "BS":
+                return list(nested_value)
+
+        return {nested_key: _normalize_dynamodb_value(nested_item) for nested_key, nested_item in value.items()}
+
+    if isinstance(value, list):
+        return [_normalize_dynamodb_value(item) for item in value]
+
+    return value
+
+
+def _format_title(value: Any) -> str:
+    text = str(value).replace("_", " ").replace("-", " ").strip()
+    return text.title() if text else "Detalhe"
+
+
+def _format_scalar(value: Any) -> str:
+    if value is None:
+        return "Não informado"
+    if isinstance(value, bool):
+        return "Sim" if value else "Não"
+    if isinstance(value, Decimal):
+        return str(int(value) if value == value.to_integral_value() else float(value))
+    if isinstance(value, (dict, list, tuple, set)):
+        return _format_json(value)
+    return str(value)
+
+
+def _build_result_lines(value: Any, lines: List[str], indent: int = 0) -> None:
+    prefix = "  " * indent
+
+    if isinstance(value, dict):
+        if not value:
+            lines.append(f"{prefix}Sem informações")
+            return
+
+        for key, nested_value in value.items():
+            lines.append(f"{prefix}{_format_title(key)}:")
+            _build_result_lines(nested_value, lines, indent + 1)
+        return
+
+    if isinstance(value, (list, tuple, set)):
+        items = list(value)
+        if not items:
+            lines.append(f"{prefix}Sem itens")
+            return
+
+        for item in items:
+            if isinstance(item, (dict, list, tuple, set)):
+                _build_result_lines(item, lines, indent + 1)
+            else:
+                lines.append(f"{prefix}- {_format_scalar(item)}")
+        return
+
+    lines.append(f"{prefix}{_format_scalar(value)}")
+
+
+def _build_result_html(value: Any, heading_level: int = 3) -> str:
+    if isinstance(value, dict):
+        if not value:
+            return '<p class="result-empty">Sem informações.</p>'
+
+        sections = []
+        for key, nested_value in value.items():
+            sections.append(
+                f'<section class="result-section">'
+                f'<h{heading_level}>{escape(_format_title(key))}</h{heading_level}>'
+                f'{_build_result_html(nested_value, min(heading_level + 1, 5))}'
+                f'</section>'
+            )
+        return "".join(sections)
+
+    if isinstance(value, (list, tuple, set)):
+        items = list(value)
+        if not items:
+            return '<p class="result-empty">Sem itens.</p>'
+
+        rendered_items = []
+        for item in items:
+            if isinstance(item, (dict, list, tuple, set)):
+                rendered_items.append(f"<li>{_build_result_html(item, min(heading_level + 1, 5))}</li>")
+            else:
+                rendered_items.append(f"<li>{escape(_format_scalar(item))}</li>")
+        return f'<ul class="result-list">{"".join(rendered_items)}</ul>'
+
+    return f'<p class="result-value">{escape(_format_scalar(value))}</p>'
+
+
 def _build_summary_lines(report: Dict[str, Any]) -> List[str]:
-    result = report.get("result", {}) or {}
+    normalized = _normalize_dynamodb_value(report)
+    result = normalized.get("result", {}) or {}
     lines = [
-        f"Execution ID: {report.get('execution_id', '')}",
-        f"Email: {report.get('email', '')}",
-        f"Prompt: {report.get('prompt', '') or 'Sem prompt informado'}",
-        f"Source image: {report.get('image', '') or 'Not provided'}",
+        f"Email: {normalized.get('email', '')}",
+        f"Prompt: {normalized.get('prompt', '') or 'Sem prompt informado'}",
+        f"Imagem enviada: {normalized.get('image', '') or 'Não informado'}",
         "",
-        "Analysis result:",
+        "Relatório da IA:",
     ]
 
-    result_json = _format_json(result)
-    for raw_line in result_json.splitlines() or ["{}"]:
-        wrapped_lines = textwrap.wrap(
-            raw_line,
-            width=92,
-            drop_whitespace=False,
-            replace_whitespace=False,
-            break_long_words=False,
-            break_on_hyphens=False,
-        )
-        lines.extend(wrapped_lines or [""])
-
+    _build_result_lines(result, lines)
     return lines
 
 
@@ -49,7 +150,7 @@ def build_text_report(report: Dict[str, Any], download_url: str) -> str:
     lines = [
         "Architecture analysis report",
         "",
-        f"Download PDF: {download_url}",
+        f"Link de download do resultado: {download_url}",
         "",
     ]
     lines.extend(_build_summary_lines(report))
@@ -57,18 +158,18 @@ def build_text_report(report: Dict[str, Any], download_url: str) -> str:
 
 
 def build_html_report(report: Dict[str, Any], download_url: str) -> str:
-    result_json = _format_json(report.get("result", {}) or {})
-    execution_id = escape(str(report.get("execution_id", "")))
-    email = escape(str(report.get("email", "")))
-    prompt = escape(str(report.get("prompt") or "Sem prompt informado"))
-    image = escape(str(report.get("image") or "Not provided"))
+    normalized = _normalize_dynamodb_value(report)
+    email = escape(str(normalized.get("email", "")))
+    prompt = escape(str(normalized.get("prompt") or "Sem prompt informado"))
+    image = escape(str(normalized.get("image") or "Não informado"))
     download_link = escape(download_url)
+    result_html = _build_result_html(normalized.get("result", {}) or {})
 
     return f"""<!DOCTYPE html>
-<html lang=\"pt-BR\">
+<html lang="pt-BR">
   <head>
-    <meta charset=\"utf-8\" />
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body {{
         margin: 0;
@@ -105,6 +206,7 @@ def build_html_report(report: Dict[str, Any], download_url: str) -> str:
         border: 1px solid #ece3d2;
       }}
       .meta-item strong {{ display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; margin-bottom: 6px; }}
+      .meta-link {{ color: #0f766e; word-break: break-all; }}
       .download {{
         display: inline-block;
         padding: 12px 18px;
@@ -115,42 +217,59 @@ def build_html_report(report: Dict[str, Any], download_url: str) -> str:
         font-weight: 700;
         margin-bottom: 24px;
       }}
-      pre {{
-        margin: 0;
-        padding: 20px;
+      .result {{ display: grid; gap: 16px; }}
+      .result-section {{
+        padding: 16px 18px;
         border-radius: 16px;
-        background: #0b1020;
-        color: #e5e7eb;
-        overflow-x: auto;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+      }}
+      .result-section h3,
+      .result-section h4,
+      .result-section h5 {{
+        margin: 0 0 10px;
+        color: #0f172a;
+        line-height: 1.25;
+      }}
+      .result-section h3 {{ font-size: 18px; }}
+      .result-section h4 {{ font-size: 16px; }}
+      .result-section h5 {{ font-size: 14px; }}
+      .result-value {{
+        margin: 0;
+        color: #1f2937;
+        line-height: 1.7;
         white-space: pre-wrap;
         word-break: break-word;
-        font-size: 13px;
-        line-height: 1.6;
       }}
-      .footer {{
-        margin-top: 18px;
-        font-size: 12px;
-        color: #6b7280;
+      .result-list {{
+        margin: 0;
+        padding-left: 20px;
+        color: #1f2937;
+        line-height: 1.7;
       }}
+      .result-empty {{ margin: 0; color: #6b7280; }}
+      .footer {{ margin-top: 18px; font-size: 12px; color: #6b7280; }}
     </style>
   </head>
   <body>
-    <div class=\"shell\">
-      <div class=\"card\">
-        <div class=\"hero\">
+    <div class="shell">
+      <div class="card">
+        <div class="hero">
           <h1>Architecture analysis report</h1>
           <p>The report is available in S3.</p>
         </div>
-        <div class=\"content\">
-          <a class=\"download\" href=\"{download_link}\">Download PDF</a>
-          <div class=\"meta\">
-            <div class=\"meta-item\"><strong>Execution ID</strong>{execution_id}</div>
-            <div class=\"meta-item\"><strong>Email</strong>{email}</div>
-            <div class=\"meta-item\"><strong>Prompt</strong>{prompt}</div>
-            <div class=\"meta-item\"><strong>Source image</strong>{image}</div>
+        <div class="content">
+          <a class="download" href="{download_link}">Link de download do resultado</a>
+          <div class="meta">
+            <div class="meta-item"><strong>Email</strong>{email}</div>
+            <div class="meta-item"><strong>Prompt</strong>{prompt}</div>
+            <div class="meta-item"><strong>Imagem enviada para análise</strong><a class="meta-link" href="{image}">{image}</a></div>
           </div>
-          <pre>{escape(result_json)}</pre>
-          <div class=\"footer\">If the link expires, request a new analysis e-mail to receive a refreshed download URL.</div>
+          <div class="result">
+            <h2>Relatório gerado pela IA</h2>
+            {result_html}
+          </div>
+          <div class="footer">If the link expires, request a new analysis e-mail to receive a refreshed download URL.</div>
         </div>
       </div>
     </div>

@@ -52,18 +52,89 @@ def test_lambda_handler_without_records_returns_summary(caplog):
 
 def test_build_html_report_includes_download_link():
     report = {
-        "execution_id": "exec-1",
-        "email": "user@example.com",
-        "prompt": "Explain the architecture",
-        "image": "s3://bucket/input.png",
-        "result": {"technical_analysis": {"findings": ["ok"]}},
+        "PK": {"S": "123e4567-e89b-12d3-a456-426614174000"},
+        "SK": {"S": "REPORT"},
+        "email": {"S": "voce@exemplo.com"},
+        "execution_id": {"S": "123e4567-e89b-12d3-a456-426614174000"},
+        "image": {"S": "s3://auto-arch-analyzer-diagram-upload-dev/voce/e7c255a9-diagram.png"},
+        "prompt": {"S": "Analise a arquitetura"},
+        "result": {
+            "M": {
+                "analysis_date": {"S": "2024-05-21T14:30:00Z"},
+                "processing_status": {"S": "ANALYZED"},
+                "s3_bucket": {"S": "auto-arch-analyzer-diagram-upload-dev"},
+                "s3_key": {"S": "voce/e7c255a9-diagram.png"},
+                "technical_analysis": {
+                    "M": {
+                        "architecture_findings": {
+                            "L": [
+                                {
+                                    "M": {
+                                        "criticality": {"S": "High"},
+                                        "description": {
+                                            "S": "O bucket S3 de armazenamento de imagens não possui bloqueio de acesso público habilitado."
+                                        },
+                                        "type": {"S": "Security"},
+                                    }
+                                },
+                                {
+                                    "M": {
+                                        "criticality": {"S": "Medium"},
+                                        "description": {
+                                            "S": "O DynamoDB está configurado com capacidade provisionada fixa. Recomenda-se mudar para sob demanda (on-demand) para melhor lidar com picos de tráfego."
+                                        },
+                                        "type": {"S": "Scalability"},
+                                    }
+                                },
+                            ]
+                        },
+                        "architecture_summary": {
+                            "M": {
+                                "architectural_style": {"S": "Serverless"},
+                                "cloud_provider": {"S": "AWS"},
+                                "description": {
+                                    "S": "Uma aplicação web moderna utilizando backend serverless e banco de dados NoSQL gerenciado."
+                                },
+                            }
+                        },
+                        "service_inventory": {
+                            "L": [
+                                {
+                                    "M": {
+                                        "category": {"S": "Networking"},
+                                        "name": {"S": "Amazon API Gateway"},
+                                        "quantity": {"N": "1"},
+                                    }
+                                },
+                                {
+                                    "M": {
+                                        "category": {"S": "Compute"},
+                                        "name": {"S": "AWS Lambda"},
+                                        "quantity": {"N": "3"},
+                                    }
+                                },
+                            ]
+                        },
+                    }
+                },
+            }
+        },
     }
 
     html = build_html_report(report, "https://signed-url")
 
     assert "https://signed-url" in html
-    assert "exec-1" in html
-    assert "technical_analysis" in html
+    assert "voce@exemplo.com" in html
+    assert "Analise a arquitetura" in html
+    assert "s3://auto-arch-analyzer-diagram-upload-dev/voce/e7c255a9-diagram.png" in html
+    assert "Execution ID" not in html
+    assert "technical_analysis" not in html
+    assert "Technical Analysis" in html
+    assert "Architecture Findings" in html
+    assert "High" in html
+    assert "Amazon API Gateway" in html
+    assert "Serverless" in html
+    assert "<pre>" not in html
 
 
 def test_build_pdf_report_returns_pdf_bytes():
