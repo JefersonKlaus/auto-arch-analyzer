@@ -45,6 +45,16 @@ variable "dynamodb_table_name" {
   type        = string
 }
 
+variable "reports_pdf_bucket_name" {
+  description = "S3 bucket name used to store generated PDF reports"
+  type        = string
+}
+
+variable "ses_from_email" {
+  description = "Verified SES e-mail identity used as the sender"
+  type        = string
+}
+
 variable "sqs_pdf_mail_queue_url" {
   description = "SQS URL for the PDF/Mail queue"
   type        = string

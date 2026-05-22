@@ -43,3 +43,8 @@ variable "bedrock_model_id" {
   type        = string
   default     = "anthropic.claude-3-sonnet-20240229-v1:0"
 }
+
+variable "ses_from_email" {
+  description = "Verified SES e-mail identity used as the sender for report notifications"
+  type        = string
+}
