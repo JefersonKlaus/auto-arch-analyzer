@@ -157,7 +157,9 @@ class TestDynamoDBRepository:
 
         repo = DynamoDBRepository("test-table")
 
-        with pytest.raises(RuntimeError, match="Failed to update SQS message id in DynamoDB"):
+        with pytest.raises(
+            RuntimeError, match="Failed to update SQS message id in DynamoDB"
+        ):
             repo.update_sqs_message_id("id", "msg-1")
 
 

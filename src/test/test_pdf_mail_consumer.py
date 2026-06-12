@@ -5,11 +5,12 @@ Unit tests for the PDF/Mail SQS consumer Lambda.
 import base64
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from lambdas.pdf_mail_consumer.handler import lambda_handler
 from lambdas.pdf_mail_consumer.orchestrator import PdfMailConsumerOrchestrator
-from lambdas.pdf_mail_consumer.report_renderer import build_html_report, build_pdf_report
+from lambdas.pdf_mail_consumer.report_renderer import (
+    build_html_report,
+    build_pdf_report,
+)
 
 
 PNG_BYTES = base64.b64decode(
@@ -20,7 +21,10 @@ PNG_BYTES = base64.b64decode(
 @patch("lambdas.pdf_mail_consumer.handler.PdfMailConsumerOrchestrator")
 def test_lambda_handler_processes_sqs_records(mock_orchestrator_class, caplog):
     mock_orchestrator = MagicMock()
-    mock_orchestrator.process_records.return_value = {"status": "SUCCESS", "processed_records": 1}
+    mock_orchestrator.process_records.return_value = {
+        "status": "SUCCESS",
+        "processed_records": 1,
+    }
     mock_orchestrator_class.return_value = mock_orchestrator
 
     event = {
@@ -67,7 +71,9 @@ def test_build_html_report_includes_download_link(mock_s3_client_factory):
         "SK": {"S": "REPORT"},
         "email": {"S": "voce@exemplo.com"},
         "execution_id": {"S": "123e4567-e89b-12d3-a456-426614174000"},
-        "image": {"S": "s3://auto-arch-analyzer-diagram-upload-dev/voce/e7c255a9-diagram.png"},
+        "image": {
+            "S": "s3://auto-arch-analyzer-diagram-upload-dev/voce/e7c255a9-diagram.png"
+        },
         "prompt": {"S": "Analise a arquitetura"},
         "result": {
             "M": {
@@ -137,7 +143,9 @@ def test_build_html_report_includes_download_link(mock_s3_client_factory):
     assert "https://signed-url" in html
     assert "voce@exemplo.com" in html
     assert "Analise a arquitetura" in html
-    assert "s3://auto-arch-analyzer-diagram-upload-dev/voce/e7c255a9-diagram.png" in html
+    assert (
+        "s3://auto-arch-analyzer-diagram-upload-dev/voce/e7c255a9-diagram.png" in html
+    )
     assert "https://image-signed-url" in html
     assert "Analysis Date" not in html
     assert "Processing Status" not in html
@@ -148,7 +156,7 @@ def test_build_html_report_includes_download_link(mock_s3_client_factory):
     assert "High" in html
     assert "Amazon API Gateway" in html
     assert "Serverless" in html
-    assert "<img src=\"https://image-signed-url\"" in html
+    assert '<img src="https://image-signed-url"' in html
     assert "<pre>" not in html
 
 
@@ -178,7 +186,9 @@ def test_build_pdf_report_returns_pdf_bytes():
 def test_orchestrator_process_records_sends_report(mock_s3_client_factory):
     mock_s3_client = MagicMock()
     mock_s3_client.generate_presigned_url.return_value = "https://image-signed-url"
-    mock_s3_client.get_object.return_value = {"Body": MagicMock(read=MagicMock(return_value=PNG_BYTES))}
+    mock_s3_client.get_object.return_value = {
+        "Body": MagicMock(read=MagicMock(return_value=PNG_BYTES))
+    }
     mock_s3_client_factory.return_value = mock_s3_client
 
     repository = MagicMock()
@@ -221,7 +231,9 @@ def test_orchestrator_process_records_sends_report(mock_s3_client_factory):
     assert "user@example.com" in result.get("recipients", [])
     repository.get_report.assert_called_once_with("exec-1")
     storage.upload_pdf.assert_called_once()
-    storage.create_download_url.assert_called_once_with("reports/exec-1/analysis-report.pdf")
+    storage.create_download_url.assert_called_once_with(
+        "reports/exec-1/analysis-report.pdf"
+    )
     mailer.send_report_email.assert_called_once()
     sent_kwargs = mailer.send_report_email.call_args.kwargs
     assert sent_kwargs["recipient_email"] == "user@example.com"
@@ -237,15 +249,22 @@ def test_orchestrator_requires_db_item_id():
         region="us-east-1",
     )
 
-    with pytest.raises(ValueError, match="db_item_id field is required"):
-        orchestrator.process_records(
-            [
-                {
-                    "messageId": "msg-1",
-                    "body": '{"email": "user@example.com"}',
-                    "messageAttributes": {},
-                    "eventSource": "aws:sqs",
-                    "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:auto-arch-analyzer-pdf-mail-queue-dev",
-                }
-            ]
-        )
+    result = orchestrator.process_records(
+        [
+            {
+                "messageId": "msg-1",
+                "body": '{"email": "user@example.com"}',
+                "messageAttributes": {},
+                "eventSource": "aws:sqs",
+                "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:auto-arch-analyzer-pdf-mail-queue-dev",
+            }
+        ]
+    )
+
+    # Validate that the missing db_item_id is properly handled
+    assert result["status"] == "FAILURE"
+    assert result["processed_records"] == 1
+    assert result["recipients"] == []
+    assert len(result["failures"]) == 1
+    assert result["failures"][0]["reason"] == "missing_db_item_id"
+    assert result["failures"][0]["record_index"] == "0"
