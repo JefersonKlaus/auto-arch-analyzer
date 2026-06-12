@@ -3,7 +3,15 @@
 from decimal import Decimal
 from html import escape
 import json
+import os
+import struct
+import textwrap
 from typing import Any, Dict, List, Sequence
+import zlib
+import logging
+
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 
 
 def _json_default(value: Any) -> Any:
@@ -52,6 +60,235 @@ def _normalize_dynamodb_value(value: Any) -> Any:
         return [_normalize_dynamodb_value(item) for item in value]
 
     return value
+
+
+def _parse_s3_uri(s3_uri: str) -> tuple[str, str] | None:
+    if not isinstance(s3_uri, str) or not s3_uri.startswith("s3://"):
+        return None
+
+    bucket_and_key = s3_uri[5:]
+    bucket, _, key = bucket_and_key.partition("/")
+    if not bucket or not key:
+        return None
+    return bucket, key
+
+
+def _create_image_url(s3_uri: str) -> str:
+    parsed = _parse_s3_uri(s3_uri)
+    if not parsed:
+        return s3_uri
+
+    bucket, key = parsed
+    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-east-1"
+    s3_client = boto3.client("s3", region_name=region)
+
+    try:
+        return s3_client.generate_presigned_url(
+            ClientMethod="get_object",
+            Params={"Bucket": bucket, "Key": key},
+            ExpiresIn=86400,
+        )
+    except ClientError:
+        return s3_uri
+
+
+def _fetch_s3_object_bytes(s3_uri: str) -> bytes | None:
+    parsed = _parse_s3_uri(s3_uri)
+    if not parsed:
+        return None
+
+    bucket, key = parsed
+    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-east-1"
+    s3_client = boto3.client("s3", region_name=region)
+
+    try:
+        response = s3_client.get_object(Bucket=bucket, Key=key)
+        body = response["Body"].read()
+        return body or None
+    except (ClientError, BotoCoreError):
+        return None
+
+
+def _paeth_predictor(left: int, above: int, upper_left: int) -> int:
+    estimate = left + above - upper_left
+    left_distance = abs(estimate - left)
+    above_distance = abs(estimate - above)
+    upper_left_distance = abs(estimate - upper_left)
+
+    if left_distance <= above_distance and left_distance <= upper_left_distance:
+        return left
+    if above_distance <= upper_left_distance:
+        return above
+    return upper_left
+
+
+def _apply_png_filter(filter_type: int, row: bytes, previous_row: bytes, bytes_per_pixel: int) -> bytes:
+    output = bytearray(len(row))
+
+    for index, value in enumerate(row):
+        left = output[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+        above = previous_row[index] if previous_row else 0
+        upper_left = previous_row[index - bytes_per_pixel] if previous_row and index >= bytes_per_pixel else 0
+
+        if filter_type == 0:
+            decoded = value
+        elif filter_type == 1:
+            decoded = (value + left) & 0xFF
+        elif filter_type == 2:
+            decoded = (value + above) & 0xFF
+        elif filter_type == 3:
+            decoded = (value + ((left + above) // 2)) & 0xFF
+        elif filter_type == 4:
+            decoded = (value + _paeth_predictor(left, above, upper_left)) & 0xFF
+        else:
+            raise ValueError(f"Unsupported PNG filter: {filter_type}")
+
+        output[index] = decoded
+
+    return bytes(output)
+
+
+def _decode_png_to_rgb(image_bytes: bytes) -> Dict[str, Any] | None:
+    png_signature = b"\x89PNG\r\n\x1a\n"
+    if not image_bytes.startswith(png_signature):
+        return None
+
+    offset = len(png_signature)
+    MAX_EMBED_PIXELS = int(os.environ.get("AUTOARCH_PDF_MAX_PIXELS", "1000000"))
+    width = height = bit_depth = color_type = interlace = None
+    palette = b""
+    transparency = b""
+    compressed_chunks: List[bytes] = []
+
+    while offset + 8 <= len(image_bytes):
+        chunk_length = struct.unpack(">I", image_bytes[offset:offset + 4])[0]
+        offset += 4
+        chunk_type = image_bytes[offset:offset + 4]
+        offset += 4
+        chunk_data = image_bytes[offset:offset + chunk_length]
+        offset += chunk_length + 4
+
+        if chunk_type == b"IHDR":
+            width, height, bit_depth, color_type, compression, filter_method, interlace = struct.unpack(">IIBBBBB", chunk_data)
+            if compression != 0 or filter_method != 0:
+                return None
+            # avoid decoding very large images into memory which can cause Lambda OOM
+            try:
+                if width * height > MAX_EMBED_PIXELS:
+                    logging.getLogger(__name__).warning(
+                        "Skipping embedding image into PDF because dimensions too large: %dx%d > %d",
+                        width,
+                        height,
+                        MAX_EMBED_PIXELS,
+                    )
+                    return None
+            except Exception:
+                # be defensive: if any parsing error occurs, skip image embedding
+                return None
+        elif chunk_type == b"PLTE":
+            palette = chunk_data
+        elif chunk_type == b"tRNS":
+            transparency = chunk_data
+        elif chunk_type == b"IDAT":
+            compressed_chunks.append(chunk_data)
+        elif chunk_type == b"IEND":
+            break
+
+    if not width or not height or bit_depth != 8 or interlace != 0:
+        return None
+
+    try:
+        decompressed = zlib.decompress(b"".join(compressed_chunks))
+    except zlib.error:
+        return None
+
+    if color_type == 0:
+        bytes_per_pixel = 1
+    elif color_type == 2:
+        bytes_per_pixel = 3
+    elif color_type == 3:
+        bytes_per_pixel = 1
+    elif color_type == 4:
+        bytes_per_pixel = 2
+    elif color_type == 6:
+        bytes_per_pixel = 4
+    else:
+        return None
+
+    row_stride = width * bytes_per_pixel
+    expected_length = (row_stride + 1) * height
+    if len(decompressed) < expected_length:
+        return None
+
+    previous_row = b""
+    rgb_rows = bytearray()
+    cursor = 0
+
+    for _row_index in range(height):
+        filter_type = decompressed[cursor]
+        cursor += 1
+        row_data = decompressed[cursor:cursor + row_stride]
+        cursor += row_stride
+        decoded_row = _apply_png_filter(filter_type, row_data, previous_row, bytes_per_pixel)
+        previous_row = decoded_row
+
+        if color_type == 0:
+            for pixel in decoded_row:
+                rgb_rows.extend((pixel, pixel, pixel))
+        elif color_type == 2:
+            rgb_rows.extend(decoded_row)
+        elif color_type == 3:
+            for index in decoded_row:
+                palette_offset = index * 3
+                if palette_offset + 3 > len(palette):
+                    return None
+                red, green, blue = palette[palette_offset:palette_offset + 3]
+                alpha = transparency[index] if index < len(transparency) else 255
+                rgb_rows.extend(
+                    (
+                        (red * alpha + 255 * (255 - alpha)) // 255,
+                        (green * alpha + 255 * (255 - alpha)) // 255,
+                        (blue * alpha + 255 * (255 - alpha)) // 255,
+                    )
+                )
+        elif color_type == 4:
+            for offset_index in range(0, len(decoded_row), 2):
+                gray = decoded_row[offset_index]
+                alpha = decoded_row[offset_index + 1]
+                composite = (gray * alpha + 255 * (255 - alpha)) // 255
+                rgb_rows.extend((composite, composite, composite))
+        elif color_type == 6:
+            for offset_index in range(0, len(decoded_row), 4):
+                red = decoded_row[offset_index]
+                green = decoded_row[offset_index + 1]
+                blue = decoded_row[offset_index + 2]
+                alpha = decoded_row[offset_index + 3]
+                rgb_rows.extend(
+                    (
+                        (red * alpha + 255 * (255 - alpha)) // 255,
+                        (green * alpha + 255 * (255 - alpha)) // 255,
+                        (blue * alpha + 255 * (255 - alpha)) // 255,
+                    )
+                )
+
+    return {
+        "width": width,
+        "height": height,
+        "data": zlib.compress(bytes(rgb_rows)),
+        "color_space": "/DeviceRGB",
+        "bits": 8,
+    }
+
+
+def _build_pdf_image_resource(image_uri: Any) -> Dict[str, Any] | None:
+    if not isinstance(image_uri, str):
+        return None
+
+    image_bytes = _fetch_s3_object_bytes(image_uri)
+    if not image_bytes:
+        return None
+
+    return _decode_png_to_rgb(image_bytes)
 
 
 def _format_title(value: Any) -> str:
@@ -162,8 +399,19 @@ def build_html_report(report: Dict[str, Any], download_url: str) -> str:
     email = escape(str(normalized.get("email", "")))
     prompt = escape(str(normalized.get("prompt") or "Sem prompt informado"))
     image = escape(str(normalized.get("image") or "Não informado"))
+    image_source = _create_image_url(str(normalized.get("image") or ""))
+    image_source_escaped = escape(image_source)
     download_link = escape(download_url)
-    result_html = _build_result_html(normalized.get("result", {}) or {})
+    result = normalized.get("result", {}) or {}
+    technical_analysis = result.get("technical_analysis") if isinstance(result, dict) else None
+    if technical_analysis is None:
+        technical_analysis = result
+    result_html = (
+        '<section class="result-section">'
+        '<h3>Technical Analysis</h3>'
+        f'{_build_result_html(technical_analysis, 4)}'
+        '</section>'
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
@@ -207,6 +455,24 @@ def build_html_report(report: Dict[str, Any], download_url: str) -> str:
       }}
       .meta-item strong {{ display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; margin-bottom: 6px; }}
       .meta-link {{ color: #0f766e; word-break: break-all; }}
+            .image-preview {{
+                margin-top: 10px;
+            }}
+            .image-preview img {{
+                display: block;
+                width: 100%;
+                max-width: 640px;
+                height: auto;
+                border-radius: 12px;
+                border: 1px solid #d6d3d1;
+                background: #fff;
+            }}
+            .image-preview a {{
+                display: inline-block;
+                margin-top: 8px;
+                color: #0f766e;
+                word-break: break-all;
+            }}
       .download {{
         display: inline-block;
         padding: 12px 18px;
@@ -263,7 +529,13 @@ def build_html_report(report: Dict[str, Any], download_url: str) -> str:
           <div class="meta">
             <div class="meta-item"><strong>Email</strong>{email}</div>
             <div class="meta-item"><strong>Prompt</strong>{prompt}</div>
-            <div class="meta-item"><strong>Imagem enviada para análise</strong><a class="meta-link" href="{image}">{image}</a></div>
+                        <div class="meta-item">
+                            <strong>Imagem enviada para análise</strong>
+                            <div class="image-preview">
+                                <img src="{image_source_escaped}" alt="Imagem enviada para análise" loading="lazy" />
+                                <a class="meta-link" href="{image_source_escaped}" target="_blank" rel="noreferrer">{image}</a>
+                            </div>
+                        </div>
           </div>
           <div class="result">
             <h2>Relatório gerado pela IA</h2>
@@ -281,18 +553,54 @@ def _escape_pdf_text(value: str) -> str:
     return value.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
 
 
-def _build_pdf_content(lines: Sequence[str]) -> bytes:
-    commands = ["BT", "/F1 11 Tf", "50 760 Td"]
-    for index, line in enumerate(lines):
-        if index > 0:
-            commands.append("0 -13 Td")
-        commands.append(f"({_escape_pdf_text(line)}) Tj")
-    commands.append("ET")
-    return "\n".join(commands).encode("latin-1")
+def _pdf_text(x: float, y: float, text: str, font: str = "F1", size: int = 11, color: tuple[float, float, float] = (0.12, 0.15, 0.2)) -> str:
+    red, green, blue = color
+    return (
+        "BT\n"
+        f"{red:.3f} {green:.3f} {blue:.3f} rg\n"
+        f"/{font} {size} Tf\n"
+        f"1 0 0 1 {x:.2f} {y:.2f} Tm\n"
+        f"({_escape_pdf_text(text)}) Tj\n"
+        "ET"
+    )
 
 
-def _chunk_lines(lines: Sequence[str], chunk_size: int) -> List[List[str]]:
-    return [list(lines[index : index + chunk_size]) for index in range(0, len(lines), chunk_size)]
+def _pdf_box(x: float, y: float, width: float, height: float, fill: tuple[float, float, float], stroke: tuple[float, float, float] | None = None) -> str:
+    fill_r, fill_g, fill_b = fill
+    if stroke is None:
+        stroke_r, stroke_g, stroke_b = fill
+    else:
+        stroke_r, stroke_g, stroke_b = stroke
+
+    return (
+        "q\n"
+        f"{fill_r:.3f} {fill_g:.3f} {fill_b:.3f} rg\n"
+        f"{stroke_r:.3f} {stroke_g:.3f} {stroke_b:.3f} RG\n"
+        f"{x:.2f} {y:.2f} {width:.2f} {height:.2f} re\n"
+        "B\n"
+        "Q"
+    )
+
+
+def _pdf_image(x: float, y: float, width: float, height: float, name: str = "Im1") -> str:
+    return (
+        "q\n"
+        f"{width:.2f} 0 0 {height:.2f} {x:.2f} {y:.2f} cm\n"
+        f"/{name} Do\n"
+        "Q"
+    )
+
+
+def _wrap_pdf_text(text: str, max_chars: int) -> List[str]:
+    wrapped = textwrap.wrap(
+        text,
+        width=max_chars,
+        drop_whitespace=False,
+        replace_whitespace=False,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    return wrapped or [""]
 
 
 def _write_pdf_object(buffer: bytearray, object_number: int, body: bytes, offsets: List[int]) -> None:
@@ -302,15 +610,158 @@ def _write_pdf_object(buffer: bytearray, object_number: int, body: bytes, offset
     buffer.extend(b"\nendobj\n")
 
 
-def build_pdf_report(report: Dict[str, Any]) -> bytes:
-    lines = _build_summary_lines(report)
-    if not lines:
-        lines = ["Architecture analysis report"]
+def _build_pdf_entries(report: Dict[str, Any]) -> List[Dict[str, Any]]:
+    normalized = _normalize_dynamodb_value(report)
+    result = normalized.get("result", {}) or {}
+    technical_analysis = result.get("technical_analysis") if isinstance(result, dict) else result
+    entries: List[Dict[str, Any]] = [
+        {"kind": "section_title", "text": "Technical Analysis"},
+    ]
 
-    pages = _chunk_lines(lines, 46)
-    object_count = 3 + len(pages) * 2
-    page_object_numbers = [4 + index * 2 for index in range(len(pages))]
-    content_object_numbers = [5 + index * 2 for index in range(len(pages))]
+    technical_lines: List[str] = []
+    _build_result_lines(technical_analysis, technical_lines)
+
+    for raw_line in technical_lines:
+        stripped_line = raw_line.lstrip()
+        indent = (len(raw_line) - len(stripped_line)) // 2
+        if stripped_line.endswith(":") and not stripped_line.startswith("- "):
+            entries.append({"kind": "section_heading", "text": stripped_line[:-1], "indent": indent})
+        elif stripped_line.startswith("- "):
+            entries.append({"kind": "bullet", "text": stripped_line[2:], "indent": indent})
+        else:
+            entries.append({"kind": "text", "text": stripped_line, "indent": indent})
+
+    return entries
+
+
+def _fit_image_size(image_width: int, image_height: int, max_width: float, max_height: float) -> tuple[float, float]:
+    scale = min(max_width / image_width, max_height / image_height, 1.0)
+    return image_width * scale, image_height * scale
+
+
+def _render_pdf_entries(entries: Sequence[Dict[str, Any]], first_page: bool, image_resource: Dict[str, Any] | None = None) -> List[bytes]:
+    page_width = 612.0
+    page_height = 792.0
+    margin_x = 38.0
+    header_top = None
+    header_height = 0.0
+    body_bottom = 52.0
+    body_top_first = 535.0
+    body_top_following = 675.0
+    content_left = 52.0
+    content_width = page_width - (content_left * 2)
+    image_box_top = 528.0
+    image_box_bottom = 372.0
+    image_box_height = image_box_top - image_box_bottom
+    image_inner_width = 472.0
+    image_inner_height = 108.0
+
+    pages: List[List[str]] = []
+    current_commands: List[str] = []
+    current_y = body_top_first if first_page else body_top_following
+
+    def start_page(is_first_page: bool) -> None:
+        nonlocal current_commands, current_y
+        current_commands = []
+        # simple page background
+        current_commands.append(_pdf_box(0, 0, page_width, page_height, (0.97, 0.95, 0.91), (0.97, 0.95, 0.91)))
+        # set a comfortable top for content
+        current_y = 740.0
+
+    def flush_page() -> None:
+        pages.append(current_commands.copy())
+
+    def maybe_new_page(is_first_page: bool) -> None:
+        start_page(is_first_page)
+
+    def remaining_height() -> float:
+        return current_y - body_bottom
+
+    maybe_new_page(first_page)
+
+    for entry_index, entry in enumerate(entries):
+        kind = entry["kind"]
+        text = str(entry["text"])
+        indent = int(entry.get("indent", 0))
+
+        if kind in {"hero_title", "meta_label", "meta_value"}:
+            continue
+
+        if kind == "section_title":
+            needed_height = 26.0
+            if remaining_height() < needed_height:
+                flush_page()
+                maybe_new_page(False)
+
+            current_commands.append(_pdf_text(52, current_y, text, font="F2", size=14, color=(0.06, 0.46, 0.43)))
+            current_y -= 20.0
+            continue
+
+        if kind == "section_heading":
+            wrapped = _wrap_pdf_text(text, max(34, 62 - (indent * 4)))
+            needed_height = 18.0 * len(wrapped) + 4.0
+            if remaining_height() < needed_height:
+                flush_page()
+                maybe_new_page(False)
+                current_commands.append(_pdf_text(52, current_y, "Technical Analysis", font="F2", size=14, color=(0.06, 0.46, 0.43)))
+                current_y -= 20.0
+
+            for wrapped_line in wrapped:
+                current_commands.append(_pdf_text(56 + indent * 12, current_y, wrapped_line, font="F2", size=11.0, color=(0.08, 0.12, 0.18)))
+                current_y -= 16.0
+            current_y -= 4.0
+            continue
+
+        if kind == "bullet":
+            available_chars = max(28, 74 - (indent * 6))
+            wrapped = _wrap_pdf_text(text, available_chars)
+            needed_height = 14.0 * len(wrapped) + 4.0
+            if remaining_height() < needed_height:
+                flush_page()
+                maybe_new_page(False)
+                current_commands.append(_pdf_text(52, current_y, "Technical Analysis", font="F2", size=14, color=(0.06, 0.46, 0.43)))
+                current_y -= 20.0
+
+            bullet_x = 56 + indent * 12
+            current_commands.append(_pdf_text(bullet_x, current_y, f"- {wrapped[0]}", font="F1", size=10.5, color=(0.13, 0.15, 0.21)))
+            current_y -= 14.0
+            for wrapped_line in wrapped[1:]:
+                current_commands.append(_pdf_text(bullet_x + 12, current_y, wrapped_line, font="F1", size=10.5, color=(0.13, 0.15, 0.21)))
+                current_y -= 14.0
+            current_y -= 2.0
+            continue
+
+        wrapped = _wrap_pdf_text(text, max(30, 74 - (indent * 6)))
+        needed_height = 14.0 * len(wrapped) + 2.0
+        if remaining_height() < needed_height:
+            flush_page()
+            maybe_new_page(False)
+            current_commands.append(_pdf_text(52, current_y, "Technical Analysis", font="F2", size=14, color=(0.06, 0.46, 0.43)))
+            current_y -= 20.0
+
+        for wrapped_line in wrapped:
+            current_commands.append(_pdf_text(56 + indent * 12, current_y, wrapped_line, font="F1", size=10.5, color=(0.13, 0.15, 0.21)))
+            current_y -= 13.0
+        current_y -= 2.0
+
+    flush_page()
+
+    page_bodies: List[bytes] = []
+    for commands in pages:
+        body = "\n".join(commands).encode("latin-1")
+        page_bodies.append(body)
+
+    return page_bodies
+
+
+def build_pdf_report(report: Dict[str, Any]) -> bytes:
+    normalized = _normalize_dynamodb_value(report)
+    entries = _build_pdf_entries(report)
+    page_bodies = _render_pdf_entries(entries, first_page=True)
+
+    object_count = 4 + len(page_bodies) * 2
+    page_object_numbers = [5 + index * 2 for index in range(len(page_bodies))]
+    content_object_numbers = [6 + index * 2 for index in range(len(page_bodies))]
 
     buffer = bytearray(b"%PDF-1.4\n")
     offsets: List[int] = []
@@ -318,25 +769,19 @@ def build_pdf_report(report: Dict[str, Any]) -> bytes:
     _write_pdf_object(buffer, 1, b"<< /Type /Catalog /Pages 2 0 R >>", offsets)
 
     kids = " ".join(f"{page_number} 0 R" for page_number in page_object_numbers)
-    pages_body = f"<< /Type /Pages /Kids [{kids}] /Count {len(pages)} >>".encode("ascii")
+    pages_body = f"<< /Type /Pages /Kids [{kids}] /Count {len(page_bodies)} >>".encode("ascii")
     _write_pdf_object(buffer, 2, pages_body, offsets)
 
-    _write_pdf_object(
-        buffer,
-        3,
-        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-        offsets,
-    )
+    _write_pdf_object(buffer, 3, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>", offsets)
+    _write_pdf_object(buffer, 4, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>", offsets)
 
-    for page_number, content_number, page_lines in zip(page_object_numbers, content_object_numbers, pages):
-        content_bytes = _build_pdf_content(page_lines or [""])
-        content_body = b"<< /Length " + str(len(content_bytes)).encode("ascii") + b" >>\nstream\n" + content_bytes + b"\nendstream"
+    for page_number, content_number, page_body in zip(page_object_numbers, content_object_numbers, page_bodies):
+        content_body = b"<< /Length " + str(len(page_body)).encode("ascii") + b" >>\nstream\n" + page_body + b"\nendstream"
         _write_pdf_object(buffer, content_number, content_body, offsets)
-
-        page_body = (
-            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents {content_number} 0 R >>"
+        page_body_value = (
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {content_number} 0 R >>"
         ).encode("ascii")
-        _write_pdf_object(buffer, page_number, page_body, offsets)
+        _write_pdf_object(buffer, page_number, page_body_value, offsets)
 
     xref_start = len(buffer)
     buffer.extend(f"xref\n0 {object_count + 1}\n".encode("ascii"))
