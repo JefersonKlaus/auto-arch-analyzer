@@ -41,8 +41,13 @@ class BedrockService:
             "anthropic.claude-3-5-sonnet-20240620-v1:0",
         ]
 
-        if model.startswith("anthropic.claude-3") and model not in active_claude_3_models:
-            logging.warning(f"Model ID '{model}' is not a known active Claude 3 model. Overriding with Claude 3.5 Sonnet.")
+        if (
+            model.startswith("anthropic.claude-3")
+            and model not in active_claude_3_models
+        ):
+            logging.warning(
+                f"Model ID '{model}' is not a known active Claude 3 model. Overriding with Claude 3.5 Sonnet."
+            )
             self.model = "anthropic.claude-3-5-sonnet-20240620-v1:0"
         else:
             self.model = model
@@ -224,12 +229,20 @@ class BedrockService:
 
         try:
             parsed_uri = urlparse(s3_uri)
-            if parsed_uri.scheme != "s3" or not parsed_uri.netloc or not parsed_uri.path.lstrip('/'):
-                raise ValueError(f"Formato de URI S3 inválido: {s3_uri}. Esperado 's3://bucket/key'.")
+            if (
+                parsed_uri.scheme != "s3"
+                or not parsed_uri.netloc
+                or not parsed_uri.path.lstrip("/")
+            ):
+                raise ValueError(
+                    f"Formato de URI S3 inválido: {s3_uri}. Esperado 's3://bucket/key'."
+                )
 
             s3_key = parsed_uri.path.lstrip("/")
 
-            self.logger.info(f"Recuperando imagem do S3 com a chave: '{s3_key}' (da URI: '{s3_uri}')")
+            self.logger.info(
+                f"Recuperando imagem do S3 com a chave: '{s3_key}' (da URI: '{s3_uri}')"
+            )
             image_bytes = self.s3_service.get_image_from_s3(s3_key)
 
             s3_key_lower = s3_key.lower()

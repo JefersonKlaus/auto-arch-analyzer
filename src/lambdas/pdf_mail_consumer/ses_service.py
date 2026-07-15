@@ -14,7 +14,9 @@ class SesReportMailer:
         self.source_email = source_email
         self.ses_client = boto3.client("ses", region_name=region)
 
-    def send_report_email(self, recipient_email: str, subject: str, text_body: str, html_body: str) -> str:
+    def send_report_email(
+        self, recipient_email: str, subject: str, text_body: str, html_body: str
+    ) -> str:
         try:
             response = self.ses_client.send_email(
                 Source=self.source_email,

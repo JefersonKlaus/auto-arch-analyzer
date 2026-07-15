@@ -79,4 +79,6 @@ class DynamoDBRepository:
                 },
             )
         except ClientError as exc:
-            raise RuntimeError(f"Failed to update SQS message id in DynamoDB: {exc}") from exc
+            raise RuntimeError(
+                f"Failed to update SQS message id in DynamoDB: {exc}"
+            ) from exc

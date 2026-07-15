@@ -38,4 +38,6 @@ class S3ReportStorage:
                 ExpiresIn=expiration_seconds,
             )
         except ClientError as exc:
-            raise RuntimeError(f"Failed to create presigned URL for S3 report: {exc}") from exc
+            raise RuntimeError(
+                f"Failed to create presigned URL for S3 report: {exc}"
+            ) from exc

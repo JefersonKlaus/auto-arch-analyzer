@@ -1,6 +1,7 @@
 """
 Request parsing utilities for the PDF/Mail consumer.
 """
+
 import json
 from typing import Any, Dict
 
@@ -27,4 +28,3 @@ class RequestParser:
             event_source=record.get("eventSource"),
             event_source_arn=record.get("eventSourceARN"),
         )
-

@@ -16,10 +16,14 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event: Any, context: Any) -> Dict[str, Any]:
-    records: List[Dict[str, Any]] = event.get("Records", []) if isinstance(event, dict) else []
+    records: List[Dict[str, Any]] = (
+        event.get("Records", []) if isinstance(event, dict) else []
+    )
 
     if not records and isinstance(event, dict):
-        logger.info("pdf-mail-consumer invoked without SQS records", extra={"event": event})
+        logger.info(
+            "pdf-mail-consumer invoked without SQS records", extra={"event": event}
+        )
         return {"status": "NO_RECORDS", "processed_records": 0}
 
     try:

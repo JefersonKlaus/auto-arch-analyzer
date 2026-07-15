@@ -54,7 +54,10 @@ def _normalize_dynamodb_value(value: Any) -> Any:
             if key == "BS":
                 return list(nested_value)
 
-        return {nested_key: _normalize_dynamodb_value(nested_item) for nested_key, nested_item in value.items()}
+        return {
+            nested_key: _normalize_dynamodb_value(nested_item)
+            for nested_key, nested_item in value.items()
+        }
 
     if isinstance(value, list):
         return [_normalize_dynamodb_value(item) for item in value]
@@ -79,7 +82,11 @@ def _create_image_url(s3_uri: str) -> str:
         return s3_uri
 
     bucket, key = parsed
-    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-east-1"
+    region = (
+        os.environ.get("AWS_REGION")
+        or os.environ.get("AWS_DEFAULT_REGION")
+        or "us-east-1"
+    )
     s3_client = boto3.client("s3", region_name=region)
 
     try:
@@ -98,7 +105,11 @@ def _fetch_s3_object_bytes(s3_uri: str) -> bytes | None:
         return None
 
     bucket, key = parsed
-    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-east-1"
+    region = (
+        os.environ.get("AWS_REGION")
+        or os.environ.get("AWS_DEFAULT_REGION")
+        or "us-east-1"
+    )
     s3_client = boto3.client("s3", region_name=region)
 
     try:
@@ -122,13 +133,19 @@ def _paeth_predictor(left: int, above: int, upper_left: int) -> int:
     return upper_left
 
 
-def _apply_png_filter(filter_type: int, row: bytes, previous_row: bytes, bytes_per_pixel: int) -> bytes:
+def _apply_png_filter(
+    filter_type: int, row: bytes, previous_row: bytes, bytes_per_pixel: int
+) -> bytes:
     output = bytearray(len(row))
 
     for index, value in enumerate(row):
         left = output[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
         above = previous_row[index] if previous_row else 0
-        upper_left = previous_row[index - bytes_per_pixel] if previous_row and index >= bytes_per_pixel else 0
+        upper_left = (
+            previous_row[index - bytes_per_pixel]
+            if previous_row and index >= bytes_per_pixel
+            else 0
+        )
 
         if filter_type == 0:
             decoded = value
@@ -161,15 +178,23 @@ def _decode_png_to_rgb(image_bytes: bytes) -> Dict[str, Any] | None:
     compressed_chunks: List[bytes] = []
 
     while offset + 8 <= len(image_bytes):
-        chunk_length = struct.unpack(">I", image_bytes[offset:offset + 4])[0]
+        chunk_length = struct.unpack(">I", image_bytes[offset : offset + 4])[0]
         offset += 4
-        chunk_type = image_bytes[offset:offset + 4]
+        chunk_type = image_bytes[offset : offset + 4]
         offset += 4
-        chunk_data = image_bytes[offset:offset + chunk_length]
+        chunk_data = image_bytes[offset : offset + chunk_length]
         offset += chunk_length + 4
 
         if chunk_type == b"IHDR":
-            width, height, bit_depth, color_type, compression, filter_method, interlace = struct.unpack(">IIBBBBB", chunk_data)
+            (
+                width,
+                height,
+                bit_depth,
+                color_type,
+                compression,
+                filter_method,
+                interlace,
+            ) = struct.unpack(">IIBBBBB", chunk_data)
             if compression != 0 or filter_method != 0:
                 return None
             # avoid decoding very large images into memory which can cause Lambda OOM
@@ -227,9 +252,11 @@ def _decode_png_to_rgb(image_bytes: bytes) -> Dict[str, Any] | None:
     for _row_index in range(height):
         filter_type = decompressed[cursor]
         cursor += 1
-        row_data = decompressed[cursor:cursor + row_stride]
+        row_data = decompressed[cursor : cursor + row_stride]
         cursor += row_stride
-        decoded_row = _apply_png_filter(filter_type, row_data, previous_row, bytes_per_pixel)
+        decoded_row = _apply_png_filter(
+            filter_type, row_data, previous_row, bytes_per_pixel
+        )
         previous_row = decoded_row
 
         if color_type == 0:
@@ -242,7 +269,7 @@ def _decode_png_to_rgb(image_bytes: bytes) -> Dict[str, Any] | None:
                 palette_offset = index * 3
                 if palette_offset + 3 > len(palette):
                     return None
-                red, green, blue = palette[palette_offset:palette_offset + 3]
+                red, green, blue = palette[palette_offset : palette_offset + 3]
                 alpha = transparency[index] if index < len(transparency) else 255
                 rgb_rows.extend(
                     (
@@ -346,9 +373,9 @@ def _build_result_html(value: Any, heading_level: int = 3) -> str:
         for key, nested_value in value.items():
             sections.append(
                 f'<section class="result-section">'
-                f'<h{heading_level}>{escape(_format_title(key))}</h{heading_level}>'
-                f'{_build_result_html(nested_value, min(heading_level + 1, 5))}'
-                f'</section>'
+                f"<h{heading_level}>{escape(_format_title(key))}</h{heading_level}>"
+                f"{_build_result_html(nested_value, min(heading_level + 1, 5))}"
+                f"</section>"
             )
         return "".join(sections)
 
@@ -360,7 +387,9 @@ def _build_result_html(value: Any, heading_level: int = 3) -> str:
         rendered_items = []
         for item in items:
             if isinstance(item, (dict, list, tuple, set)):
-                rendered_items.append(f"<li>{_build_result_html(item, min(heading_level + 1, 5))}</li>")
+                rendered_items.append(
+                    f"<li>{_build_result_html(item, min(heading_level + 1, 5))}</li>"
+                )
             else:
                 rendered_items.append(f"<li>{escape(_format_scalar(item))}</li>")
         return f'<ul class="result-list">{"".join(rendered_items)}</ul>'
@@ -403,14 +432,16 @@ def build_html_report(report: Dict[str, Any], download_url: str) -> str:
     image_source_escaped = escape(image_source)
     download_link = escape(download_url)
     result = normalized.get("result", {}) or {}
-    technical_analysis = result.get("technical_analysis") if isinstance(result, dict) else None
+    technical_analysis = (
+        result.get("technical_analysis") if isinstance(result, dict) else None
+    )
     if technical_analysis is None:
         technical_analysis = result
     result_html = (
         '<section class="result-section">'
-        '<h3>Technical Analysis</h3>'
-        f'{_build_result_html(technical_analysis, 4)}'
-        '</section>'
+        "<h3>Technical Analysis</h3>"
+        f"{_build_result_html(technical_analysis, 4)}"
+        "</section>"
     )
 
     return f"""<!DOCTYPE html>
@@ -553,7 +584,14 @@ def _escape_pdf_text(value: str) -> str:
     return value.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
 
 
-def _pdf_text(x: float, y: float, text: str, font: str = "F1", size: int = 11, color: tuple[float, float, float] = (0.12, 0.15, 0.2)) -> str:
+def _pdf_text(
+    x: float,
+    y: float,
+    text: str,
+    font: str = "F1",
+    size: int = 11,
+    color: tuple[float, float, float] = (0.12, 0.15, 0.2),
+) -> str:
     red, green, blue = color
     return (
         "BT\n"
@@ -565,7 +603,14 @@ def _pdf_text(x: float, y: float, text: str, font: str = "F1", size: int = 11, c
     )
 
 
-def _pdf_box(x: float, y: float, width: float, height: float, fill: tuple[float, float, float], stroke: tuple[float, float, float] | None = None) -> str:
+def _pdf_box(
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    fill: tuple[float, float, float],
+    stroke: tuple[float, float, float] | None = None,
+) -> str:
     fill_r, fill_g, fill_b = fill
     if stroke is None:
         stroke_r, stroke_g, stroke_b = fill
@@ -582,13 +627,10 @@ def _pdf_box(x: float, y: float, width: float, height: float, fill: tuple[float,
     )
 
 
-def _pdf_image(x: float, y: float, width: float, height: float, name: str = "Im1") -> str:
-    return (
-        "q\n"
-        f"{width:.2f} 0 0 {height:.2f} {x:.2f} {y:.2f} cm\n"
-        f"/{name} Do\n"
-        "Q"
-    )
+def _pdf_image(
+    x: float, y: float, width: float, height: float, name: str = "Im1"
+) -> str:
+    return f"q\n{width:.2f} 0 0 {height:.2f} {x:.2f} {y:.2f} cm\n/{name} Do\nQ"
 
 
 def _wrap_pdf_text(text: str, max_chars: int) -> List[str]:
@@ -603,7 +645,9 @@ def _wrap_pdf_text(text: str, max_chars: int) -> List[str]:
     return wrapped or [""]
 
 
-def _write_pdf_object(buffer: bytearray, object_number: int, body: bytes, offsets: List[int]) -> None:
+def _write_pdf_object(
+    buffer: bytearray, object_number: int, body: bytes, offsets: List[int]
+) -> None:
     offsets.append(len(buffer))
     buffer.extend(f"{object_number} 0 obj\n".encode("ascii"))
     buffer.extend(body)
@@ -613,7 +657,9 @@ def _write_pdf_object(buffer: bytearray, object_number: int, body: bytes, offset
 def _build_pdf_entries(report: Dict[str, Any]) -> List[Dict[str, Any]]:
     normalized = _normalize_dynamodb_value(report)
     result = normalized.get("result", {}) or {}
-    technical_analysis = result.get("technical_analysis") if isinstance(result, dict) else result
+    technical_analysis = (
+        result.get("technical_analysis") if isinstance(result, dict) else result
+    )
     entries: List[Dict[str, Any]] = [
         {"kind": "section_title", "text": "Technical Analysis"},
     ]
@@ -625,21 +671,35 @@ def _build_pdf_entries(report: Dict[str, Any]) -> List[Dict[str, Any]]:
         stripped_line = raw_line.lstrip()
         indent = (len(raw_line) - len(stripped_line)) // 2
         if stripped_line.endswith(":") and not stripped_line.startswith("- "):
-            entries.append({"kind": "section_heading", "text": stripped_line[:-1], "indent": indent})
+            entries.append(
+                {
+                    "kind": "section_heading",
+                    "text": stripped_line[:-1],
+                    "indent": indent,
+                }
+            )
         elif stripped_line.startswith("- "):
-            entries.append({"kind": "bullet", "text": stripped_line[2:], "indent": indent})
+            entries.append(
+                {"kind": "bullet", "text": stripped_line[2:], "indent": indent}
+            )
         else:
             entries.append({"kind": "text", "text": stripped_line, "indent": indent})
 
     return entries
 
 
-def _fit_image_size(image_width: int, image_height: int, max_width: float, max_height: float) -> tuple[float, float]:
+def _fit_image_size(
+    image_width: int, image_height: int, max_width: float, max_height: float
+) -> tuple[float, float]:
     scale = min(max_width / image_width, max_height / image_height, 1.0)
     return image_width * scale, image_height * scale
 
 
-def _render_pdf_entries(entries: Sequence[Dict[str, Any]], first_page: bool, image_resource: Dict[str, Any] | None = None) -> List[bytes]:
+def _render_pdf_entries(
+    entries: Sequence[Dict[str, Any]],
+    first_page: bool,
+    image_resource: Dict[str, Any] | None = None,
+) -> List[bytes]:
     page_width = 612.0
     page_height = 792.0
     margin_x = 38.0
@@ -664,7 +724,11 @@ def _render_pdf_entries(entries: Sequence[Dict[str, Any]], first_page: bool, ima
         nonlocal current_commands, current_y
         current_commands = []
         # simple page background
-        current_commands.append(_pdf_box(0, 0, page_width, page_height, (0.97, 0.95, 0.91), (0.97, 0.95, 0.91)))
+        current_commands.append(
+            _pdf_box(
+                0, 0, page_width, page_height, (0.97, 0.95, 0.91), (0.97, 0.95, 0.91)
+            )
+        )
         # set a comfortable top for content
         current_y = 740.0
 
@@ -693,7 +757,11 @@ def _render_pdf_entries(entries: Sequence[Dict[str, Any]], first_page: bool, ima
                 flush_page()
                 maybe_new_page(False)
 
-            current_commands.append(_pdf_text(52, current_y, text, font="F2", size=14, color=(0.06, 0.46, 0.43)))
+            current_commands.append(
+                _pdf_text(
+                    52, current_y, text, font="F2", size=14, color=(0.06, 0.46, 0.43)
+                )
+            )
             current_y -= 20.0
             continue
 
@@ -703,11 +771,29 @@ def _render_pdf_entries(entries: Sequence[Dict[str, Any]], first_page: bool, ima
             if remaining_height() < needed_height:
                 flush_page()
                 maybe_new_page(False)
-                current_commands.append(_pdf_text(52, current_y, "Technical Analysis", font="F2", size=14, color=(0.06, 0.46, 0.43)))
+                current_commands.append(
+                    _pdf_text(
+                        52,
+                        current_y,
+                        "Technical Analysis",
+                        font="F2",
+                        size=14,
+                        color=(0.06, 0.46, 0.43),
+                    )
+                )
                 current_y -= 20.0
 
             for wrapped_line in wrapped:
-                current_commands.append(_pdf_text(56 + indent * 12, current_y, wrapped_line, font="F2", size=11.0, color=(0.08, 0.12, 0.18)))
+                current_commands.append(
+                    _pdf_text(
+                        56 + indent * 12,
+                        current_y,
+                        wrapped_line,
+                        font="F2",
+                        size=11.0,
+                        color=(0.08, 0.12, 0.18),
+                    )
+                )
                 current_y -= 16.0
             current_y -= 4.0
             continue
@@ -719,14 +805,41 @@ def _render_pdf_entries(entries: Sequence[Dict[str, Any]], first_page: bool, ima
             if remaining_height() < needed_height:
                 flush_page()
                 maybe_new_page(False)
-                current_commands.append(_pdf_text(52, current_y, "Technical Analysis", font="F2", size=14, color=(0.06, 0.46, 0.43)))
+                current_commands.append(
+                    _pdf_text(
+                        52,
+                        current_y,
+                        "Technical Analysis",
+                        font="F2",
+                        size=14,
+                        color=(0.06, 0.46, 0.43),
+                    )
+                )
                 current_y -= 20.0
 
             bullet_x = 56 + indent * 12
-            current_commands.append(_pdf_text(bullet_x, current_y, f"- {wrapped[0]}", font="F1", size=10.5, color=(0.13, 0.15, 0.21)))
+            current_commands.append(
+                _pdf_text(
+                    bullet_x,
+                    current_y,
+                    f"- {wrapped[0]}",
+                    font="F1",
+                    size=10.5,
+                    color=(0.13, 0.15, 0.21),
+                )
+            )
             current_y -= 14.0
             for wrapped_line in wrapped[1:]:
-                current_commands.append(_pdf_text(bullet_x + 12, current_y, wrapped_line, font="F1", size=10.5, color=(0.13, 0.15, 0.21)))
+                current_commands.append(
+                    _pdf_text(
+                        bullet_x + 12,
+                        current_y,
+                        wrapped_line,
+                        font="F1",
+                        size=10.5,
+                        color=(0.13, 0.15, 0.21),
+                    )
+                )
                 current_y -= 14.0
             current_y -= 2.0
             continue
@@ -736,11 +849,29 @@ def _render_pdf_entries(entries: Sequence[Dict[str, Any]], first_page: bool, ima
         if remaining_height() < needed_height:
             flush_page()
             maybe_new_page(False)
-            current_commands.append(_pdf_text(52, current_y, "Technical Analysis", font="F2", size=14, color=(0.06, 0.46, 0.43)))
+            current_commands.append(
+                _pdf_text(
+                    52,
+                    current_y,
+                    "Technical Analysis",
+                    font="F2",
+                    size=14,
+                    color=(0.06, 0.46, 0.43),
+                )
+            )
             current_y -= 20.0
 
         for wrapped_line in wrapped:
-            current_commands.append(_pdf_text(56 + indent * 12, current_y, wrapped_line, font="F1", size=10.5, color=(0.13, 0.15, 0.21)))
+            current_commands.append(
+                _pdf_text(
+                    56 + indent * 12,
+                    current_y,
+                    wrapped_line,
+                    font="F1",
+                    size=10.5,
+                    color=(0.13, 0.15, 0.21),
+                )
+            )
             current_y -= 13.0
         current_y -= 2.0
 
@@ -769,14 +900,31 @@ def build_pdf_report(report: Dict[str, Any]) -> bytes:
     _write_pdf_object(buffer, 1, b"<< /Type /Catalog /Pages 2 0 R >>", offsets)
 
     kids = " ".join(f"{page_number} 0 R" for page_number in page_object_numbers)
-    pages_body = f"<< /Type /Pages /Kids [{kids}] /Count {len(page_bodies)} >>".encode("ascii")
+    pages_body = f"<< /Type /Pages /Kids [{kids}] /Count {len(page_bodies)} >>".encode(
+        "ascii"
+    )
     _write_pdf_object(buffer, 2, pages_body, offsets)
 
-    _write_pdf_object(buffer, 3, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>", offsets)
-    _write_pdf_object(buffer, 4, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>", offsets)
+    _write_pdf_object(
+        buffer, 3, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>", offsets
+    )
+    _write_pdf_object(
+        buffer,
+        4,
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
+        offsets,
+    )
 
-    for page_number, content_number, page_body in zip(page_object_numbers, content_object_numbers, page_bodies):
-        content_body = b"<< /Length " + str(len(page_body)).encode("ascii") + b" >>\nstream\n" + page_body + b"\nendstream"
+    for page_number, content_number, page_body in zip(
+        page_object_numbers, content_object_numbers, page_bodies
+    ):
+        content_body = (
+            b"<< /Length "
+            + str(len(page_body)).encode("ascii")
+            + b" >>\nstream\n"
+            + page_body
+            + b"\nendstream"
+        )
         _write_pdf_object(buffer, content_number, content_body, offsets)
         page_body_value = (
             f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {content_number} 0 R >>"

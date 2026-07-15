@@ -1,6 +1,7 @@
 """
 Data models for the PDF/Mail consumer.
 """
+
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -18,4 +19,3 @@ class PdfMailMessage:
         if isinstance(self.body, dict):
             return self.body
         return {}
-

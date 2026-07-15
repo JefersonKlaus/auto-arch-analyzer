@@ -2,6 +2,7 @@
 Orchestrator for the PDF/Mail consumer.
 Single Responsibility: load report data, render artifacts and send e-mail notifications.
 """
+
 import logging
 import os
 from typing import Any, Dict, List, Optional
@@ -35,7 +36,12 @@ class PdfMailConsumerOrchestrator:
         mailer: Optional[SesReportMailer] = None,
         region: Optional[str] = None,
     ):
-        resolved_region = region or os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-east-1"
+        resolved_region = (
+            region
+            or os.environ.get("AWS_REGION")
+            or os.environ.get("AWS_DEFAULT_REGION")
+            or "us-east-1"
+        )
         self.repository = repository or DynamoDBRepository(
             _env("DYNAMODB_TABLE_NAME"),
             region=resolved_region,
@@ -61,17 +67,29 @@ class PdfMailConsumerOrchestrator:
             payload = msg.payload
             execution_id = payload.get("db_item_id") or payload.get("execution_id")
             if not execution_id:
-                failures.append({"record_index": str(index), "reason": "missing_db_item_id"})
-                logger.error("db_item_id missing in SQS record", extra={"record_index": index})
+                failures.append(
+                    {"record_index": str(index), "reason": "missing_db_item_id"}
+                )
+                logger.error(
+                    "db_item_id missing in SQS record", extra={"record_index": index}
+                )
                 continue
 
             try:
                 report = self.repository.get_report(execution_id)
                 recipient_email = payload.get("email") or report.get("email")
                 if not recipient_email:
-                    raise ValueError("email field is required to send the analysis report")
+                    raise ValueError(
+                        "email field is required to send the analysis report"
+                    )
 
-                logger.info("Sending report", extra={"recipient_email": recipient_email, "execution_id": execution_id})
+                logger.info(
+                    "Sending report",
+                    extra={
+                        "recipient_email": recipient_email,
+                        "execution_id": execution_id,
+                    },
+                )
 
                 pdf_bytes = build_pdf_report(report)
                 pdf_key = self.storage.upload_pdf(execution_id, pdf_bytes)
@@ -105,15 +123,31 @@ class PdfMailConsumerOrchestrator:
                 )
 
             except Exception as exc:
-                logger.exception("Failed to process SQS record", extra={"record_index": index, "sqs_message_id": msg.message_id})
-                failures.append({
-                    "record_index": str(index),
-                    "execution_id": execution_id or "",
-                    "recipient": str(payload.get("email") or (report.get("email") if 'report' in locals() else "")),
-                    "reason": str(exc),
-                })
+                logger.exception(
+                    "Failed to process SQS record",
+                    extra={"record_index": index, "sqs_message_id": msg.message_id},
+                )
+                failures.append(
+                    {
+                        "record_index": str(index),
+                        "execution_id": execution_id or "",
+                        "recipient": str(
+                            payload.get("email")
+                            or (report.get("email") if "report" in locals() else "")
+                        ),
+                        "reason": str(exc),
+                    }
+                )
                 continue
 
-        status = "SUCCESS" if not failures else ("PARTIAL_FAILURE" if recipients else "FAILURE")
-        return {"status": status, "processed_records": len(parsed), "recipients": recipients, "failures": failures}
-
+        status = (
+            "SUCCESS"
+            if not failures
+            else ("PARTIAL_FAILURE" if recipients else "FAILURE")
+        )
+        return {
+            "status": status,
+            "processed_records": len(parsed),
+            "recipients": recipients,
+            "failures": failures,
+        }
