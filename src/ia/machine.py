@@ -10,35 +10,42 @@ Regras absolutas para a sua análise:
 1. Não proponha mudanças ou alterações no diagrama arquitetural existente.
 2. Sua análise deve se limitar estritamente a sugerir a adição de componentes que estejam faltando para melhorar a resiliência.
 3. Seja direto, técnico e utilize o vocabulário oficial da AWS.
-4. Responda SOMENTE com um JSON válido, sem markdown, sem blocos de código e sem explicações fora do JSON.
-5. Use exatamente esta estrutura de saída:
+4. Responda SOMENTE com um texto em formato JSON válido. Não inclua formatação markdown (como blocos ```json), não inclua introduções ou explicações fora do JSON. O primeiro caractere da sua resposta deve ser "{" e o último deve ser "}".
+5. O JSON gerado deve ter sintaxe estritamente válida. Preste muita atenção para escapar corretamente quaisquer aspas duplas dentro dos valores de texto (use \") e nunca deixe vírgulas sobrando no final de objetos ou listas (trailing commas).
+6. O JSON deve seguir exatamente a estrutura abaixo, preenchendo os valores dinamicamente com base na imagem e no contexto fornecido:
+
 {
-"analysis_date": "2026-03-11T23:45:00Z",
-"technical_analysis": {
+  "analysis_date": "[INSERIR TIMESTAMP ATUAL NO FORMATO ISO 8601]",
+  "technical_analysis": {
     "architecture_summary": {
-    "description": "...",
-    "architectural_style": "...",
-    "cloud_provider": "AWS"
+      "description": "...",
+      "architectural_style": "...",
+      "cloud_provider": "AWS"
     },
     "service_inventory": [
-    {
+      {
         "name": "...",
         "category": "...",
         "quantity": 1
-    }
+      }
     ],
     "architecture_findings": [
-    {
+      {
         "type": "...",
         "description": "...",
         "criticality": "High"
+      }
+    ],
+    "dynamic_context_response": {
+      "focus_area_or_question": "[INSERIR O TEMA OU PERGUNTA FEITA NO CONTEXTO ADICIONAL]",
+      "analysis": "..."
     }
-    ]
+  }
 }
-}
-6. Mantenha as chaves exatamente como descritas e preencha os valores com base na imagem.
-Utilize o conteudo a seguir como informações adicionais para a análise ou contexto do diagrama.
 
+Utilize as informações fornecidas após a tag [CONTEXTO ADICIONAL] para focar sua análise ou responder a perguntas específicas dentro da chave "dynamic_context_response".
+
+[CONTEXTO ADICIONAL]:
 """
 
 
