@@ -45,6 +45,22 @@ resource "aws_sfn_state_machine" "workflow" {
       AIProcessor = {
         Type     = "Task"
         Resource = var.ai_processor_lambda_arn
+        Next     = "IAConsumer"
+        Retry = [{
+          ErrorEquals     = ["States.ALL"]
+          IntervalSeconds = 2
+          MaxAttempts     = 3
+          BackoffRate     = 2
+        }]
+        Catch = [{
+          ErrorEquals = ["States.ALL"]
+          ResultPath  = "$.error"
+          Next        = "ErrorLogger"
+        }]
+      }
+      IAConsumer = {
+        Type     = "Task"
+        Resource = var.ia_consumer_lambda_arn
         Next     = "ReportAdapter"
         Retry = [{
           ErrorEquals     = ["States.ALL"]

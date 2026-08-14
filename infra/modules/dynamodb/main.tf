@@ -26,9 +26,18 @@ resource "aws_dynamodb_table" "project_table" {
   }
 
   global_secondary_index {
-    name            = "GSI1"
-    hash_key        = "GSI1PK"
-    range_key       = "GSI1SK"
+    name = "GSI1"
+
+    key_schema {
+      attribute_name = "GSI1PK"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "GSI1SK"
+      key_type       = "RANGE"
+    }
+
     projection_type = "ALL"
   }
 
@@ -42,9 +51,8 @@ resource "aws_dynamodb_table" "project_table" {
 resource "aws_dynamodb_table_item" "direct_debit_configs" {
   count      = length(var.direct_debit_configs)
   table_name = aws_dynamodb_table.project_table.name
-  hash_key   = aws_dynamodb_table.project_table.hash_key
-  range_key  = aws_dynamodb_table.project_table.range_key
-
+  hash_key   = "PK"
+  range_key  = "SK"
 
 
   item = jsonencode(merge(

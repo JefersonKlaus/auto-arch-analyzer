@@ -48,3 +48,13 @@ variable "ses_from_email" {
   description = "Verified SES e-mail identity used as the sender for report notifications"
   type        = string
 }
+
+variable "ia_consumer_api_url" {
+  description = "External API URL consumed by the IA consumer Lambda"
+  type        = string
+}
+
+variable "ia_consumer_api_key" {
+  description = "API key used by the IA consumer Lambda"
+  type        = string
+}

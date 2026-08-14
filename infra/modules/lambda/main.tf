@@ -59,6 +59,28 @@ module "ai_processor" {
   }
 }
 
+module "ia_consumer" {
+  source = "./dynamic_lambda"
+
+  lambda_role_arn      = var.lambda_role_arn
+  source_dir           = "${path.root}/../src/lambdas/ia_consumer"
+  handler              = "handler.lambda_handler"
+  lambda_function_name = "ia-consumer"
+  runtime              = "python3.12"
+  timeout              = 30
+  layers = compact([
+    var.common_layer_arn
+  ])
+
+  environment_variables = {
+    ENVIRONMENT         = var.environment
+    PROJECT_NAME        = var.project_name
+    S3_DIAGRAM_BUCKET   = var.s3_diagram_bucket
+    IA_CONSUMER_API_URL = var.ia_consumer_api_url
+    IA_CONSUMER_API_KEY = var.ia_consumer_api_key
+  }
+}
+
 module "init_step_function" {
   source = "./dynamic_lambda"
 

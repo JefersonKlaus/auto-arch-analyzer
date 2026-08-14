@@ -5,7 +5,6 @@ Single Responsibility: Handle event response mapping and error handling.
 
 import logging
 import os
-import sys
 from datetime import datetime, timezone
 
 from orchestrator import InitOrchestrator

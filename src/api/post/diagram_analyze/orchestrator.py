@@ -3,7 +3,7 @@ Orchestration layer coordinating the analyze workflow.
 Single Responsibility: Coordinate interaction between S3 and SQS components.
 """
 
-from typing import Dict, Any
+from typing import Any
 
 from request_parser import RequestParser
 from s3_uploader import S3DiagramUploader
@@ -25,7 +25,7 @@ class AnalyzeOrchestrator:
         self.s3_uploader = S3DiagramUploader(s3_bucket, region)
         self.sqs_publisher = SQSPublisher(sqs_queue_url, region)
 
-    def process_analyze_request(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def process_analyze_request(self, event: dict[str, Any]) -> dict[str, Any]:
         """
         Process an analyze request end-to-end.
 

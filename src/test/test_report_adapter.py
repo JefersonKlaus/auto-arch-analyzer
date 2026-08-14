@@ -4,16 +4,16 @@ Unit tests for report_adapter components.
 Run with: python -m pytest src/test/test_report_adapter.py
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lambdas.report_adapter.models import ReportAdapterRequest, ReportAdapterResult
-from lambdas.report_adapter.request_parser import RequestParser
-from lambdas.report_adapter.dynamodb_repository import DynamoDBRepository
-from lambdas.report_adapter.sqs_publisher import SQSPublisher
-from lambdas.report_adapter.orchestrator import ReportAdapterOrchestrator
 from lambdas.report_adapter import handler as handler_module
+from lambdas.report_adapter.dynamodb_repository import DynamoDBRepository
+from lambdas.report_adapter.models import ReportAdapterRequest, ReportAdapterResult
+from lambdas.report_adapter.orchestrator import ReportAdapterOrchestrator
+from lambdas.report_adapter.request_parser import RequestParser
+from lambdas.report_adapter.sqs_publisher import SQSPublisher
 
 
 class TestReportAdapterRequest:
@@ -78,17 +78,18 @@ class TestDynamoDBRepository:
         repo = DynamoDBRepository("test-table")
 
         class DummyReq:
-            execution_id = "123e4567-e89b-12d3-a456-426614174000"
-            email = "u@e.com"
-            prompt = "p"
-            s3_file_path = "s3://b/k"
-            raw_payload = {
-                "execution_id": "123e4567-e89b-12d3-a456-426614174000",
-                "email": "u@e.com",
-                "prompt": "p",
-                "s3_file_path": "s3://b/k",
-                "technical_analysis": {"a": 1},
-            }
+            def __init__(self):
+                self.execution_id = "123e4567-e89b-12d3-a456-426614174000"
+                self.email = "u@e.com"
+                self.prompt = "p"
+                self.s3_file_path = "s3://b/k"
+                self.raw_payload = {
+                    "execution_id": "123e4567-e89b-12d3-a456-426614174000",
+                    "email": "u@e.com",
+                    "prompt": "p",
+                    "s3_file_path": "s3://b/k",
+                    "technical_analysis": {"a": 1},
+                }
 
         item_id = repo.save_report(DummyReq())
         assert item_id == "123e4567-e89b-12d3-a456-426614174000"
@@ -117,11 +118,12 @@ class TestDynamoDBRepository:
         repo = DynamoDBRepository("t")
 
         class DummyReq:
-            execution_id = "id"
-            email = "u@e.com"
-            prompt = "p"
-            s3_file_path = "s3://b/k"
-            raw_payload = {}
+            def __init__(self):
+                self.execution_id = "id"
+                self.email = "u@e.com"
+                self.prompt = "p"
+                self.s3_file_path = "s3://b/k"
+                self.raw_payload = {}
 
         with pytest.raises(RuntimeError, match="Failed to persist item to DynamoDB"):
             repo.save_report(DummyReq())
