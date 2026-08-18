@@ -6,6 +6,9 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
+ANALYZE_ROUTE = "analisar"
+
+
 class IAConsumerApiClient:
     def __init__(self, api_url: str, api_key: str, timeout_seconds: int = 10):
         if not isinstance(api_url, str) or not api_url.strip():
@@ -13,9 +16,17 @@ class IAConsumerApiClient:
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("IA_CONSUMER_API_KEY environment variable not set")
 
-        self.api_url = api_url
+        self.api_url = self._build_endpoint_url(api_url)
         self.api_key = api_key
         self.timeout_seconds = timeout_seconds
+
+    @staticmethod
+    def _build_endpoint_url(api_url: str) -> str:
+        """Append the analysis route to the configured base URL."""
+        base_url = api_url.strip().rstrip("/")
+        if base_url.endswith(f"/{ANALYZE_ROUTE}"):
+            return base_url
+        return f"{base_url}/{ANALYZE_ROUTE}"
 
     def analyze(self, prompt: str, imagem_url: str) -> Dict[str, Any]:
         request_body = json.dumps({"prompt": prompt, "imagem_url": imagem_url}).encode(

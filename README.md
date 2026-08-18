@@ -130,7 +130,7 @@ Adicione as seguintes variáveis:
 | `AWS_SECRET_ACCESS_KEY` | [Secret Key criada na Etapa 3] | Chave secreta do usuário IAM |
 | `AWS_ACCOUNT_ID` | [ID da conta AWS] | ID numérico da conta AWS (12 dígitos) |
 | `AWS_REGION` | `us-east-1` | Região AWS onde será feito o deploy |
-| `IA_CONSUMER_API_URL` | [URL da API externa] | URL do endpoint usado pela lambda `ia_consumer` |
+| `IA_CONSUMER_API_URL` | [URL base da API externa] | URL base da API de IA; a lambda `ia_consumer` chama a rota `/analisar` |
 | `IA_CONSUMER_API_KEY` | [Chave da API externa] | API key usada no header `X-API-Key` |
 | `TERRAFORM_STATE_BUCKET` | [Nome do bucket criado na Etapa 4] | Bucket S3 para armazenar o estado do Terraform |
 
