@@ -18,11 +18,6 @@ variable "file_validator_lambda_arn" {
   type        = string
 }
 
-variable "ai_processor_lambda_arn" {
-  description = "ARN of the AI Processor Lambda invoked by Step Functions"
-  type        = string
-}
-
 variable "ia_consumer_lambda_arn" {
   description = "ARN of the IA Consumer Lambda invoked by Step Functions"
   type        = string

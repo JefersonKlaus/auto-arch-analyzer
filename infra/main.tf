@@ -102,7 +102,6 @@ module "orchestration" {
   sfn_role_arn              = module.iam.sfn_role_arn
   sfn_role_id               = module.iam.sfn_role_id
   file_validator_lambda_arn = module.lambda.file_validator_function_arn
-  ai_processor_lambda_arn   = module.lambda.ai_processor_function_arn
   ia_consumer_lambda_arn    = module.lambda.ia_consumer_function_arn
   report_adapter_lambda_arn = module.lambda.report_adapter_function_arn
   error_logger_lambda_arn   = module.lambda.error_logger_function_arn
