@@ -1,6 +1,7 @@
 """Unit tests for the IA consumer Lambda components."""
 
 import json
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -117,6 +118,58 @@ class TestIAConsumerOrchestrator:
             "s3://bucket/key.png", expiration_seconds=300
         )
         mock_api_client.analyze.assert_called_once_with("Analyze", "https://signed-url")
+
+    def test_process_generates_report_adapter_contract_fields(self):
+        """report_adapter requires execution_id; it used to come from ai_processor."""
+        mock_signer = MagicMock()
+        mock_signer.create_presigned_url.return_value = "https://signed-url"
+
+        mock_api_client = MagicMock()
+        mock_api_client.analyze.return_value = {"analysis": "done"}
+
+        orchestrator = IAConsumerOrchestrator(
+            api_url="https://example.com",
+            api_key="secret",
+            signer=mock_signer,
+            api_client=mock_api_client,
+        )
+
+        result = orchestrator.process(
+            {
+                "prompt": "Analyze",
+                "s3_file_path": "s3://bucket/key.png",
+                "email": "user@example.com",
+            }
+        )
+
+        uuid.UUID(result["execution_id"])
+        assert result["analysis_date"].endswith("Z")
+        assert result["processing_status"] == "ANALYZED"
+
+    def test_process_preserves_incoming_execution_id(self):
+        mock_signer = MagicMock()
+        mock_signer.create_presigned_url.return_value = "https://signed-url"
+
+        mock_api_client = MagicMock()
+        mock_api_client.analyze.return_value = {"analysis": "done"}
+
+        orchestrator = IAConsumerOrchestrator(
+            api_url="https://example.com",
+            api_key="secret",
+            signer=mock_signer,
+            api_client=mock_api_client,
+        )
+
+        result = orchestrator.process(
+            {
+                "prompt": "Analyze",
+                "s3_file_path": "s3://bucket/key.png",
+                "email": "user@example.com",
+                "execution_id": "already-set",
+            }
+        )
+
+        assert result["execution_id"] == "already-set"
 
 
 class TestLambdaHandler:

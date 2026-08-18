@@ -1,5 +1,7 @@
 """Orchestration layer for the IA consumer lambda."""
 
+import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from http_service import IAConsumerApiClient
@@ -37,6 +39,12 @@ class IAConsumerOrchestrator:
         analysis = self.api_client.analyze(request.prompt, imagem_url)
 
         result = dict(payload)
+        # TODO: update where to get execution_id
+        result["execution_id"] = payload.get("execution_id") or str(uuid.uuid4())
+        result["analysis_date"] = (
+            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        )
+        result["processing_status"] = "ANALYZED"
         result["imagem_url"] = imagem_url
         result["technical_analysis"] = analysis
         return result
