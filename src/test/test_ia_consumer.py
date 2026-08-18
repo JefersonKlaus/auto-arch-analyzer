@@ -72,12 +72,20 @@ class TestIAConsumerApiClient:
         response.read.return_value = json.dumps({"status": "ok"}).encode("utf-8")
         mock_urlopen.return_value = response
 
-        client = IAConsumerApiClient("https://example.com/analisar", "secret")
+        client = IAConsumerApiClient("https://example.com", "secret")
         result = client.analyze("Prompt", "https://signed-url")
 
         assert result == {"status": "ok"}
         request = mock_urlopen.call_args[0][0]
         assert request.get_header("X-api-key") == "secret"
+        assert request.full_url == "https://example.com/analisar"
+
+    def test_analyze_route_is_appended_once(self):
+        client = IAConsumerApiClient("https://example.com/", "secret")
+        assert client.api_url == "https://example.com/analisar"
+
+        client = IAConsumerApiClient("https://example.com/analisar", "secret")
+        assert client.api_url == "https://example.com/analisar"
 
 
 class TestIAConsumerOrchestrator:
@@ -89,7 +97,7 @@ class TestIAConsumerOrchestrator:
         mock_api_client.analyze.return_value = {"analysis": "done"}
 
         orchestrator = IAConsumerOrchestrator(
-            api_url="https://example.com/analisar",
+            api_url="https://example.com",
             api_key="secret",
             signer=mock_signer,
             api_client=mock_api_client,
@@ -115,7 +123,7 @@ class TestLambdaHandler:
     @patch.dict(
         "lambdas.ia_consumer.handler.os.environ",
         {
-            "IA_CONSUMER_API_URL": "https://example.com/analisar",
+            "IA_CONSUMER_API_URL": "https://example.com",
             "IA_CONSUMER_API_KEY": "secret",
             "AWS_REGION": "us-east-1",
         },
@@ -133,7 +141,7 @@ class TestLambdaHandler:
 
         assert result == {"status": "ok"}
         mock_orchestrator_class.assert_called_once_with(
-            api_url="https://example.com/analisar",
+            api_url="https://example.com",
             api_key="secret",
             region="us-east-1",
         )

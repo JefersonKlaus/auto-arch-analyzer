@@ -20,7 +20,7 @@ variable "s3_diagram_bucket" {
 }
 
 variable "ia_consumer_api_url" {
-  description = "External API URL consumed by the IA consumer Lambda"
+  description = "External API base URL consumed by the IA consumer Lambda (route /analisar is appended by the Lambda)"
   type        = string
 }
 
