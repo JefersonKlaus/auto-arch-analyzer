@@ -10,7 +10,7 @@ ANALYZE_ROUTE = "analisar"
 
 
 class IAConsumerApiClient:
-    def __init__(self, api_url: str, api_key: str, timeout_seconds: int = 10):
+    def __init__(self, api_url: str, api_key: str, timeout_seconds: int = 300):
         if not isinstance(api_url, str) or not api_url.strip():
             raise ValueError("IA_CONSUMER_API_URL environment variable not set")
         if not isinstance(api_key, str) or not api_key.strip():
