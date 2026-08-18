@@ -19,7 +19,7 @@ os.environ.setdefault(
     "arn:aws:states:us-east-1:[ADD_YOUR_ACCOUNT_ID_HERE]:stateMachine:auto-arch-analyzer-workflow",
 )
 
-from handler import lambda_handler
+from handler import lambda_handler # noqa: E402
 
 
 if __name__ == "__main__":

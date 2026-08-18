@@ -702,19 +702,10 @@ def _render_pdf_entries(
 ) -> List[bytes]:
     page_width = 612.0
     page_height = 792.0
-    margin_x = 38.0
-    header_top = None
-    header_height = 0.0
     body_bottom = 52.0
     body_top_first = 535.0
     body_top_following = 675.0
-    content_left = 52.0
-    content_width = page_width - (content_left * 2)
-    image_box_top = 528.0
-    image_box_bottom = 372.0
-    image_box_height = image_box_top - image_box_bottom
-    image_inner_width = 472.0
-    image_inner_height = 108.0
+
 
     pages: List[List[str]] = []
     current_commands: List[str] = []
@@ -886,7 +877,6 @@ def _render_pdf_entries(
 
 
 def build_pdf_report(report: Dict[str, Any]) -> bytes:
-    normalized = _normalize_dynamodb_value(report)
     entries = _build_pdf_entries(report)
     page_bodies = _render_pdf_entries(entries, first_page=True)
 

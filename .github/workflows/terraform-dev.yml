@@ -50,7 +50,7 @@ jobs:
         run: terraform fmt -check
 
       - name: Terraform Plan
-        run: terraform plan -input=false -var "aws_region=${{ secrets.AWS_REGION }}" -var "aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev" -var "ses_from_email=${{ vars.AWS_SES_FROM_EMAIL }}"
+        run: terraform plan -input=false -var "aws_region=${{ secrets.AWS_REGION }}" -var "aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev" -var "ses_from_email=${{ vars.AWS_SES_FROM_EMAIL }}" -var "ia_consumer_api_url=${{ vars.IA_CONSUMER_API_URL }}" -var "ia_consumer_api_key=${{ secrets.IA_CONSUMER_API_KEY }}"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false -var "aws_region=${{ secrets.AWS_REGION }}" -var "aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev" -var "ses_from_email=${{ vars.AWS_SES_FROM_EMAIL }}"
+        run: terraform apply -auto-approve -input=false -var "aws_region=${{ secrets.AWS_REGION }}" -var "aws_account_id=${{ secrets.AWS_ACCOUNT_ID }}" -var "environment=dev" -var "ses_from_email=${{ vars.AWS_SES_FROM_EMAIL }}" -var "ia_consumer_api_url=${{ vars.IA_CONSUMER_API_URL }}" -var "ia_consumer_api_key=${{ secrets.IA_CONSUMER_API_KEY }}"

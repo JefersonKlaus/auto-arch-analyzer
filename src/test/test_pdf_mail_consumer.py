@@ -12,7 +12,6 @@ from lambdas.pdf_mail_consumer.report_renderer import (
     build_pdf_report,
 )
 
-
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5Y7f8AAAAASUVORK5CYII="
 )

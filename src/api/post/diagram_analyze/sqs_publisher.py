@@ -4,7 +4,6 @@ Single Responsibility: Handle all SQS message publishing.
 """
 
 import json
-from typing import Optional
 
 import boto3
 
@@ -27,8 +26,8 @@ class SQSPublisher:
         self,
         s3_key: str,
         s3_bucket: str,
-        email: Optional[str] = None,
-        prompt: Optional[str] = None,
+        email: str | None = None,
+        prompt: str | None = None,
     ) -> str:
         """
         Publish diagram metadata message to SQS.
@@ -66,4 +65,4 @@ class SQSPublisher:
             )
             return response["MessageId"]
         except Exception as e:
-            raise Exception(f"Failed to publish message to SQS: {str(e)}")
+            raise RuntimeError(f"Failed to publish message to SQS: {e!s}") from e

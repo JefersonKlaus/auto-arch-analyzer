@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -8,7 +7,7 @@ class AnalyzeRequest:
 
     diagram: str  # base64 encoded diagram image
     email: str
-    prompt: Optional[str] = None
+    prompt: str | None = None
 
     def __post_init__(self):
         """Validate required fields."""
@@ -30,8 +29,8 @@ class DiagramMetadata:
 
     s3_key: str
     s3_bucket: str
-    email: Optional[str] = None
-    prompt: Optional[str] = None
+    email: str | None = None
+    prompt: str | None = None
 
     @property
     def s3_path(self) -> str:

@@ -4,7 +4,7 @@ Single Responsibility: Parse and extract input data from Lambda events.
 """
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 from models import AnalyzeRequest
 
@@ -13,7 +13,7 @@ class RequestParser:
     """Parses incoming API Gateway requests into domain models."""
 
     @staticmethod
-    def parse_event(event: Dict[str, Any]) -> AnalyzeRequest:
+    def parse_event(event: dict[str, Any]) -> AnalyzeRequest:
         """
         Parse Lambda event into AnalyzeRequest.
 
@@ -47,4 +47,4 @@ class RequestParser:
         try:
             return AnalyzeRequest(diagram=diagram, email=email, prompt=prompt)
         except ValueError as e:
-            raise ValueError(f"Invalid request: {str(e)}")
+            raise ValueError(f"Invalid request: {e!s}") from e

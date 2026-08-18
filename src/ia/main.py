@@ -4,7 +4,7 @@ from io import BytesIO
 
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, Form, HTTPException, Security, status
+from fastapi import FastAPI, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 from PIL import Image
 

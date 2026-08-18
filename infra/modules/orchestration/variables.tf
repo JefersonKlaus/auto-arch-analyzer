@@ -23,6 +23,11 @@ variable "ai_processor_lambda_arn" {
   type        = string
 }
 
+variable "ia_consumer_lambda_arn" {
+  description = "ARN of the IA Consumer Lambda invoked by Step Functions"
+  type        = string
+}
+
 variable "report_adapter_lambda_arn" {
   description = "ARN of the Report Adapter Lambda invoked by Step Functions"
   type        = string

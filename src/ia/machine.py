@@ -88,9 +88,7 @@ def analyze_architecture(model, tokenizer, prompt, imagem_arquitetura):
         images=[imagem_arquitetura],
         padding=True,
         return_tensors="pt",
-    ).to(
-        "cuda"
-    )  # Despacha o cálculo pesado para a RTX 5060 Ti
+    ).to("cuda")  # Despacha o cálculo pesado para a RTX 5060 Ti
 
     # Gerando a resposta do modelo de visão multimodal
     print("\nAnalisando a arquitetura... Isso pode levar alguns segundos.")

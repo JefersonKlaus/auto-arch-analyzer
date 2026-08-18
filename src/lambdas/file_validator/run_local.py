@@ -12,7 +12,7 @@ sys.path.insert(0, str(CURRENT_DIR))
 sys.path.insert(1, str(SRC_DIR))
 sys.path.insert(2, str(SRC_DIR / "layers" / "common" / "python"))
 
-from handler import lambda_handler
+from handler import lambda_handler # noqa: E402
 
 
 if __name__ == "__main__":

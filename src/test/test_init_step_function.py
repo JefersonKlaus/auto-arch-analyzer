@@ -6,14 +6,14 @@ Run with: python -m pytest src/test/test_init_step_function.py
 """
 
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from lambdas.init_step_function.models import InitRequest
+from lambdas.init_step_function.orchestrator import InitOrchestrator
 from lambdas.init_step_function.request_parser import RequestParser
 from lambdas.init_step_function.stepfunction_service import StepFunctionTriggerService
-from lambdas.init_step_function.orchestrator import InitOrchestrator
 
 
 class TestInitRequest:
@@ -175,7 +175,7 @@ class TestStepFunctionTriggerService:
             == "arn:aws:states:us-east-1:123456789012:execution:workflow:123"
         )
         mock_sfn_client.start_execution.assert_called_once()
-        args, kwargs = mock_sfn_client.start_execution.call_args
+        _args, kwargs = mock_sfn_client.start_execution.call_args
         assert kwargs["stateMachineArn"] == "test-arn"
         assert "execution-" in kwargs["name"]
         assert json.loads(kwargs["input"]) == payload.to_dict()

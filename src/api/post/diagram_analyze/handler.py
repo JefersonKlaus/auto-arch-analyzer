@@ -6,9 +6,9 @@ Single Responsibility: Handle HTTP request/response and error mapping.
 import json
 import os
 from datetime import datetime, timezone
-from orchestrator import AnalyzeOrchestrator
 
 from common.response import error_response, success_response
+from orchestrator import AnalyzeOrchestrator
 
 
 def lambda_handler(event, context):
@@ -45,7 +45,7 @@ def lambda_handler(event, context):
         )
 
     except json.JSONDecodeError as e:
-        print(f"JSON decode error: {str(e)}")
+        print(f"JSON decode error: {e!s}")
         return error_response(
             {
                 "error": "Invalid JSON",
@@ -56,7 +56,7 @@ def lambda_handler(event, context):
         )
 
     except ValueError as e:
-        print(f"Validation error: {str(e)}")
+        print(f"Validation error: {e!s}")
         return error_response(
             {
                 "error": "Validation failed",
@@ -66,8 +66,8 @@ def lambda_handler(event, context):
             400,
         )
 
-    except Exception as e:
-        print(f"Unexpected error in analyze handler: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        print(f"Unexpected error in analyze handler: {e!s}")
         return error_response(
             {
                 "error": "Internal server error",

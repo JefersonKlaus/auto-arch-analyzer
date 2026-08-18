@@ -46,7 +46,7 @@ module "iam" {
   bedrock_model_id   = var.bedrock_model_id
   lambda_arns_for_sfn = [
     module.lambda.file_validator_function_arn,
-    module.lambda.ai_processor_function_arn,
+    module.lambda.ia_consumer_function_arn,
     module.lambda.report_adapter_function_arn,
     module.lambda.error_logger_function_arn
   ]
@@ -67,6 +67,8 @@ module "lambda" {
   project_name                   = var.project_name
   environment                    = var.environment
   s3_diagram_bucket              = module.s3.diagram_upload_bucket_name
+  ia_consumer_api_url            = var.ia_consumer_api_url
+  ia_consumer_api_key            = var.ia_consumer_api_key
   sqs_ingestion_queue_url        = module.queue.ingestion_queue_url
   sqs_ingestion_queue_arn        = module.queue.ingestion_queue_arn
   stepfunction_state_machine_arn = local.step_functions_workflow_arn
@@ -101,6 +103,7 @@ module "orchestration" {
   sfn_role_id               = module.iam.sfn_role_id
   file_validator_lambda_arn = module.lambda.file_validator_function_arn
   ai_processor_lambda_arn   = module.lambda.ai_processor_function_arn
+  ia_consumer_lambda_arn    = module.lambda.ia_consumer_function_arn
   report_adapter_lambda_arn = module.lambda.report_adapter_function_arn
   error_logger_lambda_arn   = module.lambda.error_logger_function_arn
 }

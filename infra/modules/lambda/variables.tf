@@ -19,6 +19,16 @@ variable "s3_diagram_bucket" {
   default     = "auto-arch-analyzer-diagram-upload-dev"
 }
 
+variable "ia_consumer_api_url" {
+  description = "External API URL consumed by the IA consumer Lambda"
+  type        = string
+}
+
+variable "ia_consumer_api_key" {
+  description = "API key used by the IA consumer Lambda"
+  type        = string
+}
+
 variable "sqs_ingestion_queue_url" {
   description = "SQS ingestion queue URL"
   type        = string

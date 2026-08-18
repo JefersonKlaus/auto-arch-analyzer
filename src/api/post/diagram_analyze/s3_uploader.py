@@ -5,7 +5,6 @@ Single Responsibility: Handle all S3 storage operations.
 
 import base64
 import uuid
-from typing import Optional
 
 import boto3
 
@@ -24,7 +23,7 @@ class S3DiagramUploader:
         self.bucket_name = bucket_name
         self.s3_client = boto3.client("s3", region_name=region)
 
-    def upload_diagram(self, base64_diagram: str, email: Optional[str] = None) -> str:
+    def upload_diagram(self, base64_diagram: str, email: str | None = None) -> str:
         """
         Upload base64-encoded diagram to S3.
 
@@ -42,8 +41,8 @@ class S3DiagramUploader:
         try:
             # Decode base64 to validate format
             diagram_bytes = base64.b64decode(base64_diagram)
-        except Exception as e:
-            raise ValueError(f"Invalid base64 diagram: {str(e)}")
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Invalid base64 diagram: {e!s}") from e
 
         # Generate unique key with optional email prefix
         timestamp = str(uuid.uuid4())[:8]
@@ -64,4 +63,4 @@ class S3DiagramUploader:
             )
             return s3_key
         except Exception as e:
-            raise Exception(f"Failed to upload diagram to S3: {str(e)}")
+            raise RuntimeError(f"Failed to upload diagram to S3: {e!s}") from e

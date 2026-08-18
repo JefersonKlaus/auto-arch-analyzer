@@ -6,7 +6,7 @@ Run with: python -m pytest src/test/test_file_validator.py
 """
 
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from botocore.exceptions import ClientError

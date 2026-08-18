@@ -8,6 +8,11 @@ output "ai_processor_function_arn" {
   value       = module.ai_processor.lambda_function_arn
 }
 
+output "ia_consumer_function_arn" {
+  description = "ARN of the IA Consumer Lambda function"
+  value       = module.ia_consumer.lambda_function_arn
+}
+
 output "report_adapter_function_arn" {
   description = "ARN of the Report Adapter Lambda function"
   value       = module.report_adapter.lambda_function_arn
