@@ -67,7 +67,7 @@ module "ia_consumer" {
   handler              = "handler.lambda_handler"
   lambda_function_name = "ia-consumer"
   runtime              = "python3.12"
-  timeout              = 30
+  timeout              = 300
   layers = compact([
     var.common_layer_arn
   ])
