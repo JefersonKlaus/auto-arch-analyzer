@@ -14,11 +14,14 @@ class IAConsumerOrchestrator:
         api_url: str,
         api_key: str,
         region: str = "us-east-1",
+        timeout_seconds: int = 300,
         signer: Optional[S3UrlSigner] = None,
         api_client: Optional[IAConsumerApiClient] = None,
     ):
         self.signer = signer or S3UrlSigner(region)
-        self.api_client = api_client or IAConsumerApiClient(api_url, api_key)
+        self.api_client = api_client or IAConsumerApiClient(
+            api_url, api_key, timeout_seconds=timeout_seconds
+        )
 
     def process(self, event: Dict[str, Any]) -> Dict[str, Any]:
         payload = RequestParser.parse_event(event)

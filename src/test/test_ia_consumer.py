@@ -144,4 +144,5 @@ class TestLambdaHandler:
             api_url="https://example.com",
             api_key="secret",
             region="us-east-1",
+            timeout_seconds=300,
         )
